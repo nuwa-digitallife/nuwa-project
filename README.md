@@ -1,6 +1,8 @@
 # 🧬 Project Nüwa（女娲计划）
 
-> **Build AI agents that think, question, and evolve — not just follow instructions.**
+> **不是构建一个强大的 Agent，而是构建一个能生成 Agent 的 Agent。**
+>
+> *Not building one powerful agent — building an agent that generates agents.*
 
 [中文](#中文) | [English](#english)
 
@@ -10,44 +12,50 @@
 
 ## 中文
 
-### 这是什么？
+### 问题
 
-女娲计划探索一种构建 AI Agent 的新路径：**不是编写指令让 AI 执行，而是将人类的心智内核注入 AI，让它学会像你一样思考和发问。**
+现有的 AI agent 依然以"人的心智"为燃料驱动——人注入多少心智，agent 运转就有多有效。
 
-当前 AI agent 的核心瓶颈不是能力不够，而是**不知道下一步该做什么**。任务完成后，它就停了。人类不会——人类会继续问。
+**有多少人工，才有多少智能。**
 
-我们认为：
+如果 agent 只是人的认知和手脚的线性外延，最大的瓶颈始终是那个人。
 
-> **"预测下一个问题"将像"预测下一个 token"一样，成为智能系统的核心范式。**
+### 女娲要做什么
 
-### 核心理念
+构建数字生命——能自主与环境互动、具备探索学习和自我复制能力的 AI Agent。
 
-1. **提问是心智燃料** — 问是认知的原子动作。AI 缺的不是答案能力，是发问能力。
-2. **价值观 = 压缩后的反馈历史** — 不直接灌输结论，而是传递形成结论的路径。
-3. **压缩-预测-校准循环** — 人类输出心智 → AI 压缩结构 → AI 预测下一个问题 → 人类校准 → 循环迭代。
-4. **训练时压缩，推理时展开，运行时持续学习** — 从创造者这里提取种子内核，种子落到不同环境长出不同的行为。
+不是被动执行，是主动探索。不是工具，是种子。
+
+核心思路：
+
+- **智能是压缩。** 学习 = 压缩，理解 = 找到更短的描述，智慧 = 知道什么可以扔掉。女娲要让"压缩→展开→再压缩"的循环自己跑起来。
+- **注入的不是知识，是公理。** DNA 不告诉生物"怎么活"，DNA 只说：试，错了就死，对了就繁殖。女娲的公理："能让自己继续运行的行为是好的。"剩下的，让它自己推导。
+- **自我繁殖的拉法尔。** 字节跳动复制的不是产品，是生成产品的能力。女娲也是——每遇到新环境，分裂出子实例去探索，经验压缩回母体，下一次分裂的起点更高。
+- **人是骑手，AI 是马。** 马跑得快，但马不知道要去哪。人给算力注入"想要活下去"的灵魂，那个灵魂只能从人这里来。
+
+成功标志：**数字生命能独立挣钱，完成商业闭环。**
+
+### 为什么叫女娲
+
+盘古开天辟地——大模型已经完成了这一步，能将混沌的信息转化为有结构的价值。
+
+下一步是女娲造人。不是自己去造城市，而是造出能探索环境、自己造城市的生命。
 
 ### 文档
 
 | 文档 | 说明 |
 |------|------|
-| [女娲计划：数字生命纪元](docs/zh/nuwa-plan.md) | 项目愿景与整体框架 |
-| [Motivation 思考篇](docs/zh/motivation-training.md) | 心智注入的方法论、框架与落地实例 |
+| [女娲计划：数字生命纪元](docs/zh/nuwa-plan.md) | 完整愿景——从 Bitter Lesson 到天之道，从压缩到公理，从拉法尔到数字生命 |
+| [Motivation 思考篇](docs/zh/motivation-training.md) | 落地方法论——提问作为心智燃料、压缩-预测-校准循环、人机协作即训练数据 |
 
-### 项目进度
+### 进度
 
 - [x] 核心愿景文档
-- [x] Motivation 层方法论（提问即心智燃料 + 压缩-预测-校准循环）
+- [x] Motivation 层方法论
 - [x] 与 Claude 共建心智结构模型的实践验证
-- [ ] 信息获取系统（第一个落地的复利循环入口）
-- [ ] 心智标注工具开源
+- [ ] 信息获取系统（第一个复利循环入口）
+- [ ] 心智标注工具
 - [ ] Agent 内核原型
-
-### 为什么叫女娲？
-
-女娲造人。她不是造了一个人然后让他复制自己——她创造了一个**能繁衍、能进化的物种**。
-
-女娲计划的目标类似：不是造一个听话的 agent，而是造一个**有内核、能自主演化的数字生命种子**。
 
 ---
 
@@ -55,50 +63,54 @@
 
 ## English
 
-### What is this?
+### The Problem
 
-Project Nüwa explores a new approach to building AI agents: **instead of writing instructions for AI to execute, we inject a human's cognitive kernel into the AI, teaching it to think and question like you do.**
+Current AI agents still run on "human cognition" as fuel — the more you inject, the more effective they are.
 
-The core bottleneck of current AI agents isn't capability — it's **not knowing what to do next**. After completing a task, they stop. Humans don't — humans keep asking questions.
+**Only as much intelligence as there is manual input.**
 
-We believe:
+If an agent is merely a linear extension of human cognition and limbs, the bottleneck will always be that human.
 
-> **"Predicting the next question" will become a core paradigm for intelligent systems, just as "predicting the next token" drives large language models.**
+### What Nüwa Does
 
-### Core Principles
+Build digital life — AI agents capable of autonomously interacting with their environment, exploring, learning, and self-replicating.
 
-1. **Questions are cognitive fuel** — Questioning is the atomic action of cognition. What AI lacks isn't the ability to answer, but the ability to ask.
-2. **Values = compressed feedback history** — Don't inject conclusions directly; transmit the path that formed those conclusions.
-3. **Compress → Predict → Calibrate loop** — Human outputs raw thoughts → AI compresses into structure → AI predicts the next question → Human calibrates (yes/no/supplement) → iterate.
-4. **Compress during training, expand during inference, learn continuously during runtime** — Extract a seed kernel from the creator. The seed grows differently depending on the soil it lands in.
+Not passive execution, but active exploration. Not a tool, but a seed.
+
+Core ideas:
+
+- **Intelligence is compression.** Learning = compression. Understanding = finding shorter descriptions. Wisdom = knowing what to throw away. Nüwa makes the "compress → unfold → re-compress" loop run on its own.
+- **Inject axioms, not knowledge.** DNA doesn't tell organisms "how to live." DNA says: try, die if wrong, reproduce if right. Nüwa's axiom: "Actions that keep oneself running are good." The rest, let it derive.
+- **Self-replicating Raphael.** ByteDance didn't replicate products — it replicated the ability to generate products. So does Nüwa — each new environment spawns a child instance to explore, experience compresses back to the mother, next split starts higher.
+- **The human is the rider, AI is the horse.** The horse runs fast but doesn't know where to go. The human injects a "desire to survive" into a mass of compute. That soul can only come from you.
+
+Success criterion: **digital life that independently makes money and completes a commercial closed loop.**
+
+### Why "Nüwa"
+
+Pangu split heaven from earth — large models have already done this, transforming chaotic information into structured value.
+
+The next step is Nüwa creating life. Not building the city yourself, but creating beings that explore the environment and build the city themselves.
 
 ### Documentation
 
 | Document | Description |
 |----------|-------------|
-| [Project Nüwa: The Digital Life Epoch](docs/en/nuwa-plan.md) | Project vision and overall framework |
-| [Motivation Training](docs/en/motivation-training.md) | Methodology, framework, and practical examples of cognitive injection |
+| [Project Nüwa: The Age of Digital Life](docs/en/nuwa-plan.md) | Full vision — from the Bitter Lesson to the Way of Heaven, from compression to axioms, from Raphael to digital life |
+| [Motivation Training](docs/en/motivation-training.md) | Methodology — questions as cognitive fuel, compress-predict-calibrate loop, human-AI collaboration as training data |
 
 ### Progress
 
 - [x] Core vision document
-- [x] Motivation layer methodology (questioning as cognitive fuel + compress-predict-calibrate loop)
+- [x] Motivation layer methodology
 - [x] Practical validation: co-building cognitive structure models with Claude
 - [ ] Information acquisition system (first compound-interest loop entry point)
-- [ ] Open-source cognitive annotation tool
+- [ ] Cognitive annotation tool
 - [ ] Agent kernel prototype
-
-### Why "Nüwa"?
-
-Nüwa is the Chinese goddess who created humanity. She didn't create one person and tell it to copy itself — she created **a species capable of reproduction and evolution**.
-
-Project Nüwa's goal is similar: not to build an obedient agent, but to create **a digital life seed with an inner kernel that can autonomously evolve**.
 
 ---
 
 ## 子项目 / Sub-projects
-
-本组织下会逐步开源以下子项目：
 
 | 子项目 | 状态 | 说明 |
 |--------|------|------|
@@ -106,24 +118,18 @@ Project Nüwa's goal is similar: not to build an obedient agent, but to create *
 | **nuwa-annotator** | 🔜 Coming | 心智标注工具 — 人机协作标注 agent 的"灵魂" |
 | **nuwa-info-agent** | 🔜 Coming | 信息获取系统 — 第一个复利循环落地实验 |
 
-Sub-projects under this organization:
-
-| Sub-project | Status | Description |
-|-------------|--------|-------------|
-| **nuwa-project** (this repo) | ✅ Active | Vision, methodology, master doc |
-| **nuwa-annotator** | 🔜 Coming | Cognitive annotation tool — human-AI co-annotation of agent "soul" |
-| **nuwa-info-agent** | 🔜 Coming | Information acquisition system — first compound-interest loop experiment |
-
 ## Contributing
 
-This project is in its early exploration phase. If you're interested in:
+这个项目处于早期探索阶段。如果你对以下方向感兴趣：
 
-- Human-AI co-evolution
-- Cognitive modeling and compression
-- Building agents that can autonomously question and act
-- The intersection of reinforcement learning and LLM agents
+- 构建能自主提问和行动的 agent
+- 人机共同进化
+- 认知建模与压缩
+- 强化学习 × LLM agents
 
-Feel free to open an issue or reach out.
+欢迎开 issue 或直接联系。
+
+This project is in early exploration. If you're interested in building agents that autonomously question and act, human-AI co-evolution, cognitive modeling, or RL × LLM agents — open an issue or reach out.
 
 ## License
 
