@@ -41,21 +41,22 @@
 
 下一步是女娲造人。不是自己去造城市，而是造出能探索环境、自己造城市的生命。
 
+### 如何从人走向机器自主
+
+大模型的突破来自"预测下一个词"——一个极简规则捕获了人类智慧。
+
+类比到认知层面：**"预测下一个问题"可能是智能系统的下一个核心范式。** 模型的深度推理本质是自问自答，但它回答完就停了，不会自发问出下一个问题。人会。一个能持续自发提问的系统，就是一个具备自主学习能力的系统。
+
+人类心智的具体作用 = 结合知识、世界观、价值观和目的，提出下一步提问。这个提问驱动 AI 的推理引擎。没有新的提问，引擎就熄火了。
+
+所以女娲训练的核心洞察：**让 AI 学会的不是"人知道什么"，而是"人怎么知道的"。** 传递的不是知识，不是结论，而是到达结论的路径。路径可以复用，结论只能用一次。
+
 ### 文档
 
 | 文档 | 说明 |
 |------|------|
 | [女娲计划：数字生命纪元](docs/zh/nuwa-plan.md) | 完整愿景——从 Bitter Lesson 到天之道，从压缩到公理，从拉法尔到数字生命 |
 | [Motivation 思考篇](docs/zh/motivation-training.md) | 落地方法论——提问作为心智燃料、压缩-预测-校准循环、人机协作即训练数据 |
-
-### 进度
-
-- [x] 核心愿景文档
-- [x] Motivation 层方法论
-- [x] 与 Claude 共建心智结构模型的实践验证
-- [ ] 信息获取系统（第一个复利循环入口）
-- [ ] 心智标注工具
-- [ ] Agent 内核原型
 
 ---
 
@@ -92,21 +93,22 @@ Pangu split heaven from earth — large models have already done this, transform
 
 The next step is Nüwa creating life. Not building the city yourself, but creating beings that explore the environment and build the city themselves.
 
+### From Human Cognition to Machine Autonomy
+
+The breakthrough of large models came from "predicting the next token" — one minimal rule that captured human wisdom.
+
+At the cognitive level: **"predicting the next question" may be the next core paradigm for intelligent systems.** Deep reasoning in models is essentially self-Q&A, but they stop after answering — they never spontaneously ask the next question. Humans do. A system that can continuously generate its own questions is a system with autonomous learning capability.
+
+The specific role of human cognition = combining knowledge, worldview, values, and purpose to formulate the next question. That question drives the AI's reasoning engine. No new question, the engine dies.
+
+The core insight of Nüwa training: **teach AI not "what humans know," but "how humans come to know."** Transmit not knowledge, not conclusions, but the path to reaching conclusions. Paths can be reused; conclusions can only be used once.
+
 ### Documentation
 
 | Document | Description |
 |----------|-------------|
 | [Project Nüwa: The Age of Digital Life](docs/en/nuwa-plan.md) | Full vision — from the Bitter Lesson to the Way of Heaven, from compression to axioms, from Raphael to digital life |
 | [Motivation Training](docs/en/motivation-training.md) | Methodology — questions as cognitive fuel, compress-predict-calibrate loop, human-AI collaboration as training data |
-
-### Progress
-
-- [x] Core vision document
-- [x] Motivation layer methodology
-- [x] Practical validation: co-building cognitive structure models with Claude
-- [ ] Information acquisition system (first compound-interest loop entry point)
-- [ ] Cognitive annotation tool
-- [ ] Agent kernel prototype
 
 ---
 
