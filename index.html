@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 推特日报 | Twitter AI Digest</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="site-header">
+      <div class="header-left">
+        <h1>AI 推特日报</h1>
+        <span class="subtitle">Twitter AI Digest</span>
+      </div>
+      <button class="theme-toggle" id="themeToggle" aria-label="切换主题">
+        <span class="icon-sun">&#9788;</span>
+        <span class="icon-moon">&#9790;</span>
+      </button>
+    </header>
+
+    <nav class="calendar-nav">
+      <button class="nav-btn" id="prevMonth" aria-label="上个月">&lsaquo;</button>
+      <h2 class="current-month" id="currentMonth"></h2>
+      <button class="nav-btn" id="nextMonth" aria-label="下个月">&rsaquo;</button>
+    </nav>
+
+    <div class="calendar-grid" id="calendarGrid">
+      <div class="weekday">一</div>
+      <div class="weekday">二</div>
+      <div class="weekday">三</div>
+      <div class="weekday">四</div>
+      <div class="weekday">五</div>
+      <div class="weekday">六</div>
+      <div class="weekday">日</div>
+    </div>
+
+    <section class="digest-panel" id="digestPanel">
+      <div class="digest-placeholder" id="digestPlaceholder">
+        <p>&#8592; 点击日历中有标记的日期查看日报</p>
+      </div>
+      <article class="digest-content" id="digestContent" hidden>
+        <div class="digest-header">
+          <h3 id="digestDate"></h3>
+          <button class="close-btn" id="closeDigest" aria-label="关闭">&times;</button>
+        </div>
+        <div class="digest-summary" id="digestSummary"></div>
+        <div class="digest-body" id="digestBody"></div>
+      </article>
+    </section>
+
+    <footer class="site-footer">
+      <p>数据来源：xAI Grok x_search &rarr; Claude 摘要 &nbsp;|&nbsp; <a href="https://github.com/ciwang/nuwa-project" target="_blank" rel="noopener">Project Nuwa</a></p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
