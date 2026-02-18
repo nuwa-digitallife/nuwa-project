@@ -38,11 +38,21 @@ These concepts recur throughout the docs and should be understood when editing:
 - **nuwa-annotator** — heart/soul mapping tool for human-AI annotation
 - **nuwa-info-agent** — first self-replicating loop experiment
 
-## Claude 协作协议（Notion 记忆系统）
+## Claude 协作协议（必读）
 
-完整协议见 [`docs/claude-collaboration-protocol.md`](docs/claude-collaboration-protocol.md)。
+**打开项目后必须先读** [`docs/claude-collaboration-protocol.md`](docs/claude-collaboration-protocol.md)。
 
-核心要点：
+### 为什么必读
+
+这份协议是作者（Ciwang）个人认知、原则、行为模式的持续压缩产物。它同时也是女娲计划 Soul 层（公理记忆）的现实原型——作者本人就是第一个被压缩的「心智样本」。
+
+读懂这份协议，你就能：
+1. **按作者的原则协同**，而不是每次从零磨合——减少协同摩擦成本
+2. **减少人的心智投入**——不需要每次重复解释偏好、风格、禁区
+3. **理解女娲的设计意图**——协议本身就是「公理注入 + 记忆分层 + 压缩」的活体实验
+
+### 核心要点
+
 - **每次新会话**：先 fetch Notion 主控台（`305994d0-2404-81ce-b838-cca0a4a28e3a`）+ 认知热缓存
 - **写入**：实质性对话后写每日 Log；用户触发时写项目推进 Log / 参考资料；新认知自动追加认知热缓存
 - **沟通风格**：代号麦老，INTJ 式直接逻辑驱动，补盲点挑假设，不迎合不鸡汤
