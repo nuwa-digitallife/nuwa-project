@@ -15,6 +15,11 @@ AI 日报简报生成器
   python auto_import.py --add-account "新账号"    # 添加公众号
   python auto_import.py --remove-account "旧账号" # 移除公众号
   python auto_import.py --sync-accounts           # 从 Chrome exporter 同步列表
+  python auto_import.py --mark-read 2026-02-20 1 3 5  # 标记已读
+  python auto_import.py --stats                    # 阅读统计
+  python auto_import.py --trends                   # 热点趋势
+  python auto_import.py --search "Agent"           # 搜索文章
+  python auto_import.py --build-site              # 构建/更新 digest-site 静态站
 """
 
 import argparse
@@ -65,6 +70,10 @@ AI_TITLE_KEYWORDS = [
 
 SIMILARITY_THRESHOLD = 0.45
 API_DELAY = 1.5  # 秒，API 请求间隔
+SITE_DIR = KB_ROOT / "digest-site"
+
+READING_PROFILE_FILE = SCRIPT_DIR / "reading_profile.json"
+READING_LOG_FILE = LOG_DIR / "reading_log.jsonl"
 
 
 # ── 工具函数 ──────────────────────────────────────────────
@@ -75,6 +84,32 @@ def log(msg: str):
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     with open(AUTO_IMPORT_LOG, "a", encoding="utf-8") as f:
         f.write(line + "\n")
+
+
+def notify(title: str, msg: str):
+    """macOS 原生通知"""
+    subprocess.run(
+        ["osascript", "-e", f'display notification "{msg}" with title "{title}"'],
+        capture_output=True,
+    )
+
+
+def _api_get(url: str, params: dict = None, headers: dict = None, retries: int = 3, timeout: int = 10) -> requests.Response:
+    """带指数退避重试的 API GET 请求，仅对超时/连接错误重试"""
+    for attempt in range(retries):
+        try:
+            r = requests.get(url, params=params, headers=headers, timeout=timeout)
+            r.raise_for_status()
+            return r
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            if attempt < retries - 1:
+                wait = 2 ** (attempt + 1)  # 2s → 4s → 8s
+                log(f"  API 请求失败 (attempt {attempt + 1}/{retries}), {wait}s 后重试: {e}")
+                time.sleep(wait)
+            else:
+                raise
+        except requests.exceptions.HTTPError:
+            raise  # 4xx/5xx 不重试
 
 
 def devlog(entry: dict):
@@ -188,7 +223,7 @@ def search_account(auth_key: str, keyword: str) -> dict | None:
     headers = {"X-Auth-Key": auth_key}
 
     try:
-        r = requests.get(url, params=params, headers=headers, timeout=10)
+        r = _api_get(url, params=params, headers=headers)
         data = r.json()
         items = data.get("base_resp", {}).get("ret") if data.get("base_resp") else None
         if items == 0:  # success
@@ -215,7 +250,7 @@ def fetch_account_articles(auth_key: str, fakeid: str, cutoff_ts: int) -> list[d
     while True:
         params = {"id": fakeid, "begin": begin, "size": size}
         try:
-            r = requests.get(url, params=params, headers=headers, timeout=15)
+            r = _api_get(url, params=params, headers=headers, timeout=15)
             data = r.json()
         except Exception as e:
             log(f"    page {begin // size + 1} 失败: {e}")
@@ -437,7 +472,80 @@ def merge_similar_articles(articles: list[dict]) -> list[list[dict]]:
     return groups
 
 
-# ── 生成简报 ──────────────────────────────────────────────
+# ── 评分与生成简报 ────────────────────────────────────────
+
+# 来源深度分级
+TIER1_SOURCES = {"晚点LatePost", "晚点AI", "甲子光年", "虎嗅APP", "爱范儿"}
+TIER2_SOURCES = {"机器之心", "极客公园", "InfoQ", "Founder Park"}
+
+CLICKBAIT_WORDS = ["震惊", "刚刚", "重磅", "突发", "疯了", "炸了", "沸腾"]
+
+
+def _load_reading_profile() -> dict | None:
+    """加载用户阅读画像（如存在）"""
+    if READING_PROFILE_FILE.exists():
+        try:
+            with open(READING_PROFILE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return None
+
+
+def score_article(article: dict, group_size: int) -> float:
+    """为文章/组打分，用于简报排序"""
+    score = 0.0
+    title = article.get("title", "")
+    digest = article.get("digest", "")
+    nickname = article.get("nickname", "")
+
+    # 内容丰富度：digest 长度
+    if len(digest) > 80:
+        score += 2
+    elif len(digest) > 40:
+        score += 1
+
+    # 来源深度分级
+    if nickname in TIER1_SOURCES:
+        score += 3
+    elif nickname in TIER2_SOURCES:
+        score += 2
+    else:
+        score += 1
+
+    # 独家性：只有 1 家报道 > 多家同题
+    if group_size == 1:
+        score += 2
+
+    # 多家报道也有价值（热度加分，但不如独家）
+    if group_size >= 3:
+        score += 1
+
+    # 标题党惩罚
+    if any(w in title for w in CLICKBAIT_WORDS):
+        score -= 1
+
+    # 用户兴趣加权（reading_profile.json）
+    profile = _load_reading_profile()
+    if profile:
+        sp = profile.get("source_preference", {})
+        if nickname in sp:
+            pref = sp[nickname]
+            read_rate = pref.get("read", 0) / max(pref.get("offered", 1), 1)
+            if read_rate > 0.3:
+                score += 2
+            elif read_rate > 0.15:
+                score += 1
+
+        topic_kw = profile.get("topic_keywords", {})
+        for kw in topic_kw:
+            if kw in title:
+                score += 1
+                break  # 最多加 1 分
+
+    return score
+
+
 def generate_digest(
     groups: list[list[dict]],
     hours: int,
@@ -445,6 +553,27 @@ def generate_digest(
     total_ai: int,
 ) -> str:
     today = datetime.now().strftime("%Y-%m-%d")
+
+    # 按 score 排序
+    scored = []
+    for group in groups:
+        best = group[0]
+        s = score_article(best, len(group))
+        scored.append((s, group))
+    scored.sort(key=lambda x: x[0], reverse=True)
+
+    TOP_N = 5
+    top_groups = scored[:TOP_N]
+    rest_groups = scored[TOP_N:]
+
+    # 热点话题：group_size >= 3
+    hot_topics = []
+    for s, group in scored:
+        if len(group) >= 3:
+            best = group[0]
+            sources = [a.get("nickname", "") for a in group]
+            hot_topics.append({"title": best["title"], "count": len(group), "sources": sources})
+
     lines = []
     lines.append(f"# AI 日报 {today}")
     lines.append("")
@@ -453,12 +582,18 @@ def generate_digest(
     )
     lines.append("")
 
-    for idx, group in enumerate(groups, 1):
+    # ── 必读区 ──
+    lines.append(f"## 必读 (Top {len(top_groups)})")
+    lines.append("")
+
+    global_idx = 0
+    for _score, group in top_groups:
+        global_idx += 1
         best = group[0]
         nickname = best.get("nickname", "")
         dt = datetime.fromtimestamp(best["create_time"]).strftime("%m-%d")
 
-        summary_parts = [f"<b>{idx}.</b> {best['title']}"]
+        summary_parts = [f"<b>{global_idx}.</b> {best['title']}"]
         if nickname:
             summary_parts.append(f" <code>{nickname}</code>")
         summary_parts.append(f" <code>{dt}</code>")
@@ -485,11 +620,433 @@ def generate_digest(
         lines.append("</details>")
         lines.append("")
 
+    # ── 速览区 ──
+    if rest_groups:
+        lines.append("## 速览")
+        lines.append("")
+        lines.append("| # | 标题 | 来源 | 日期 |")
+        lines.append("|---|------|------|------|")
+
+        for _score, group in rest_groups:
+            global_idx += 1
+            best = group[0]
+            nickname = best.get("nickname", "")
+            dt = datetime.fromtimestamp(best["create_time"]).strftime("%m-%d")
+            title_link = f"[{best['title']}]({best['link']})"
+            extra = f" +{len(group)-1}同题" if len(group) > 1 else ""
+            lines.append(f"| {global_idx} | {title_link}{extra} | {nickname} | {dt} |")
+
+        lines.append("")
+
+    # ── 热点话题区 ──
+    if hot_topics:
+        lines.append("## 热点话题")
+        lines.append("")
+        for topic in hot_topics:
+            lines.append(f"**{topic['title'][:30]}{'...' if len(topic['title']) > 30 else ''}** ({topic['count']} 篇报道)")
+            lines.append(f"- {', '.join(topic['sources'])}")
+            lines.append("")
+
     lines.append("---")
     lines.append("")
     lines.append("*入库：把链接发给 Claude → `帮忙加下 <url>`*")
 
     return "\n".join(lines)
+
+
+# ── 阅读反馈闭环 ──────────────────────────────────────────
+
+def _parse_digest_articles(digest_path: Path) -> dict[int, dict]:
+    """从 digest 文件解析编号→文章映射，支持新旧两种格式"""
+    articles = {}
+    content = digest_path.read_text(encoding="utf-8")
+
+    # 新格式：必读区 <details> + 速览区表格
+    # 匹配 <b>N.</b> 标题 <code>来源</code>
+    detail_pattern = re.compile(
+        r'<b>(\d+)\.</b>\s*(.+?)\s*<code>([^<]+)</code>\s*<code>(\d{2}-\d{2})</code>'
+    )
+    link_pattern = re.compile(r'\[原文\]\(([^)]+)\)')
+
+    # 先处理 <details> 块
+    blocks = content.split("<details>")
+    for block in blocks[1:]:  # skip first part before any <details>
+        header_m = detail_pattern.search(block)
+        link_m = link_pattern.search(block)
+        if header_m:
+            num = int(header_m.group(1))
+            title = header_m.group(2).strip()
+            source = header_m.group(3).strip()
+            link = link_m.group(1) if link_m else ""
+            articles[num] = {"title": title, "source": source, "link": link}
+
+    # 速览区表格行: | N | [标题](link) | 来源 | 日期 |
+    table_pattern = re.compile(
+        r'^\|\s*(\d+)\s*\|\s*\[([^\]]+)\]\(([^)]+)\)[^|]*\|\s*([^|]+)\|\s*(\d{2}-\d{2})\s*\|',
+        re.MULTILINE,
+    )
+    for m in table_pattern.finditer(content):
+        num = int(m.group(1))
+        if num not in articles:
+            articles[num] = {
+                "title": m.group(2).strip(),
+                "source": m.group(4).strip(),
+                "link": m.group(3).strip(),
+            }
+
+    return articles
+
+
+def _update_reading_profile(read_articles: list[dict]):
+    """更新 reading_profile.json"""
+    profile = {}
+    if READING_PROFILE_FILE.exists():
+        try:
+            with open(READING_PROFILE_FILE, "r", encoding="utf-8") as f:
+                profile = json.load(f)
+        except Exception:
+            pass
+
+    profile.setdefault("total_offered", 0)
+    profile.setdefault("total_read", 0)
+    profile.setdefault("source_preference", {})
+    profile.setdefault("topic_keywords", {})
+
+    for art in read_articles:
+        profile["total_read"] += 1
+        source = art.get("source", "")
+        if source:
+            sp = profile["source_preference"].setdefault(source, {"offered": 0, "read": 0})
+            sp["read"] += 1
+
+        # 提取标题关键词（中文 2-4 字，英文 2+ 字母）
+        title = art.get("title", "")
+        words = _extract_keywords(title)
+        for w in words:
+            profile["topic_keywords"][w] = profile["topic_keywords"].get(w, 0) + 1
+
+    profile["last_updated"] = datetime.now().strftime("%Y-%m-%d")
+
+    with open(READING_PROFILE_FILE, "w", encoding="utf-8") as f:
+        json.dump(profile, f, ensure_ascii=False, indent=2)
+
+
+def _update_offered_count(num_articles: int, sources: list[str]):
+    """在每次生成 digest 后更新 offered 计数"""
+    profile = {}
+    if READING_PROFILE_FILE.exists():
+        try:
+            with open(READING_PROFILE_FILE, "r", encoding="utf-8") as f:
+                profile = json.load(f)
+        except Exception:
+            pass
+
+    profile.setdefault("total_offered", 0)
+    profile.setdefault("total_read", 0)
+    profile.setdefault("source_preference", {})
+    profile.setdefault("topic_keywords", {})
+
+    profile["total_offered"] += num_articles
+    for src in sources:
+        sp = profile["source_preference"].setdefault(src, {"offered": 0, "read": 0})
+        sp["offered"] += 1
+
+    profile["last_updated"] = datetime.now().strftime("%Y-%m-%d")
+
+    with open(READING_PROFILE_FILE, "w", encoding="utf-8") as f:
+        json.dump(profile, f, ensure_ascii=False, indent=2)
+
+
+def cmd_mark_read(date: str, numbers: list[int]):
+    """标记某日简报中的指定文章为已读"""
+    digest_path = DIGEST_DIR / f"{date}.md"
+    if not digest_path.exists():
+        print(f"找不到简报: {digest_path}")
+        return
+
+    articles_map = _parse_digest_articles(digest_path)
+    if not articles_map:
+        print(f"未能从 {digest_path} 解析出文章")
+        return
+
+    read_articles = []
+    for n in numbers:
+        if n in articles_map:
+            read_articles.append({"number": n, **articles_map[n]})
+        else:
+            print(f"  编号 {n} 未找到，跳过")
+
+    if not read_articles:
+        print("没有有效的文章编号")
+        return
+
+    # 写入 reading_log.jsonl
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    log_entry = {
+        "date": date,
+        "read_at": datetime.now().isoformat(),
+        "articles": read_articles,
+    }
+    with open(READING_LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+
+    # 更新 articles_index.json 中的 read_status
+    try:
+        index = load_articles_index()
+        read_titles = {a["title"] for a in read_articles}
+        updated = 0
+        for art in index["articles"]:
+            if art["title"] in read_titles:
+                art["read_status"] = "read"
+                updated += 1
+        if updated:
+            with open(ARTICLES_INDEX_FILE, "w", encoding="utf-8") as f:
+                json.dump(index, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+    # 更新 reading_profile.json
+    _update_reading_profile(read_articles)
+
+    print(f"已标记 {len(read_articles)} 篇文章为已读:")
+    for a in read_articles:
+        print(f"  #{a['number']} {a['title'][:40]} ({a.get('source', '')})")
+
+
+def cmd_stats():
+    """输出阅读统计"""
+    if not READING_LOG_FILE.exists():
+        print("暂无阅读记录。使用 --mark-read <date> <numbers> 标记已读文章。")
+        return
+
+    # 读取所有 reading log
+    entries = []
+    with open(READING_LOG_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    entries.append(json.loads(line))
+                except Exception:
+                    pass
+
+    # 最近 30 天
+    cutoff = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    recent = [e for e in entries if e.get("date", "") >= cutoff]
+
+    # 统计 digest 篇数
+    digest_files = sorted(DIGEST_DIR.glob("????-??-??.md"))
+    recent_digests = [f for f in digest_files if f.stem >= cutoff]
+    total_offered = 0
+    for df in recent_digests:
+        articles = _parse_digest_articles(df)
+        total_offered += len(articles)
+
+    # 已读文章
+    all_read = []
+    source_stats = {}
+    topic_stats = {}
+    for entry in recent:
+        for art in entry.get("articles", []):
+            all_read.append(art)
+            src = art.get("source", "未知")
+            source_stats.setdefault(src, {"read": 0})
+            source_stats[src]["read"] += 1
+
+            # 提取关键词
+            title = art.get("title", "")
+            words = _extract_keywords(title)
+            for w in words:
+                topic_stats[w] = topic_stats.get(w, 0) + 1
+
+    total_read = len(all_read)
+    pct = f"{total_read / total_offered * 100:.1f}%" if total_offered > 0 else "N/A"
+
+    print(f"阅读统计 (最近 30 天):")
+    print(f"  日报篇数: {total_offered} 篇")
+    print(f"  已读: {total_read} 篇 ({pct})")
+    print()
+
+    # 来源 Top 5 — 计算 offered per source from digests
+    source_offered = {}
+    for df in recent_digests:
+        articles = _parse_digest_articles(df)
+        for art in articles.values():
+            src = art.get("source", "未知")
+            source_offered[src] = source_offered.get(src, 0) + 1
+
+    print("  最常读来源 Top 5:")
+    sorted_sources = sorted(source_stats.items(), key=lambda x: x[1]["read"], reverse=True)[:5]
+    for i, (src, data) in enumerate(sorted_sources, 1):
+        offered = source_offered.get(src, "?")
+        read_count = data["read"]
+        rate = f"{read_count / offered * 100:.0f}%" if isinstance(offered, int) and offered > 0 else "?"
+        print(f"    {i}. {src:<16} {read_count}/{offered} ({rate})")
+
+    print()
+    print("  最常读话题 Top 5:")
+    sorted_topics = sorted(topic_stats.items(), key=lambda x: x[1], reverse=True)[:5]
+    for i, (topic, count) in enumerate(sorted_topics, 1):
+        print(f"    {i}. {topic:<16} {count} 次")
+
+
+# ── 选题辅助 ──────────────────────────────────────────────
+
+def _extract_keywords(title: str) -> set[str]:
+    """从标题提取关键词（中文 2-4 字词、英文 token）"""
+    words = set(re.findall(r'[\u4e00-\u9fff]{2,4}|[A-Za-z][A-Za-z0-9.]*(?:\s+[0-9.]+)?', title))
+    stopwords = {"刚刚", "重磅", "最新", "突发", "独家", "一个", "什么", "怎么", "如何",
+                 "就是", "可以", "这个", "那个", "还是", "已经", "终于", "居然", "竟然",
+                 "为什么", "关于", "但是", "因为", "所以", "不是", "只是", "还有", "然而",
+                 "来了", "出了", "看看", "我们", "他们", "自己", "真的", "到底",
+                 "the", "and", "for", "with", "from", "that", "this", "are", "was",
+                 "not", "but", "all", "has", "had", "will", "how", "can", "its"}
+    return {w.strip() for w in words if w.strip() not in stopwords and len(w.strip()) >= 2}
+
+
+def cmd_trends():
+    """输出最近 3 天的热点趋势"""
+    digest_files = sorted(DIGEST_DIR.glob("????-??-??.md"), reverse=True)[:3]
+    if not digest_files:
+        print("没有找到 digest 文件")
+        return
+
+    today_file = digest_files[0] if digest_files else None
+    today_stem = today_file.stem if today_file else ""
+    older_stems = {f.stem for f in digest_files[1:]}
+
+    all_keywords = {}  # keyword → count
+    today_keywords = set()
+    older_keywords = set()
+    total_articles = 0
+
+    for df in digest_files:
+        articles = _parse_digest_articles(df)
+        total_articles += len(articles)
+        for art in articles.values():
+            words = _extract_keywords(art.get("title", ""))
+            for w in words:
+                all_keywords[w] = all_keywords.get(w, 0) + 1
+                if df.stem == today_stem:
+                    today_keywords.add(w)
+                else:
+                    older_keywords.add(w)
+
+    # 排序，标注 NEW
+    sorted_kw = sorted(all_keywords.items(), key=lambda x: x[1], reverse=True)
+
+    days = len(digest_files)
+    print(f"热点趋势 (最近 {days} 天, {total_articles} 篇):")
+    print()
+
+    max_count = sorted_kw[0][1] if sorted_kw else 1
+    for kw, count in sorted_kw[:15]:
+        bar_len = int(count / max_count * 12)
+        bar = "█" * bar_len
+
+        is_new = kw in today_keywords and kw not in older_keywords and days > 1
+        if is_new:
+            label = "🆕"
+        elif count >= 5:
+            label = "🔥"
+        else:
+            label = "  "
+
+        new_tag = "  ← 新话题" if is_new else ""
+        print(f"  {label} {kw:<16} {count} 次   {bar}{new_tag}")
+
+
+def cmd_search(keyword: str):
+    """搜索知识库和近期简报中匹配的文章"""
+    kw_lower = keyword.lower()
+    results_kb = []
+    results_digest = []
+
+    # 1. 搜索 articles_index.json
+    try:
+        index = load_articles_index()
+        for art in index["articles"]:
+            title = art.get("title", "")
+            tags = " ".join(art.get("tags", []))
+            if kw_lower in title.lower() or kw_lower in tags.lower():
+                results_kb.append(art)
+    except Exception:
+        pass
+
+    # 2. 搜索最近 7 天 digest
+    digest_files = sorted(DIGEST_DIR.glob("????-??-??.md"), reverse=True)[:7]
+    for df in digest_files:
+        articles = _parse_digest_articles(df)
+        for num, art in sorted(articles.items()):
+            if kw_lower in art.get("title", "").lower():
+                results_digest.append({"date": df.stem, "number": num, **art})
+
+    total = len(results_kb) + len(results_digest)
+    print(f'搜索: "{keyword}" ({total} 条匹配)')
+    print()
+
+    if results_kb:
+        print("  知识库:")
+        for art in results_kb:
+            status = "已读" if art.get("read_status") == "read" else "未读"
+            print(f"    [{status}] {art['title']} ({art.get('author', '')}, {art.get('crawl_date', '')})")
+            print(f"           → knowledge_base/{art.get('path', '')}/")
+        print()
+
+    if results_digest:
+        print("  近期简报:")
+        for art in results_digest:
+            print(f"    {art['date']} #{art['number']}  {art['title'][:50]} ({art.get('source', '')})")
+
+
+# ── digest-site 构建 ─────────────────────────────────────
+def cmd_build_site():
+    """生成/更新 digest-site 静态站"""
+    site_digests = SITE_DIR / "digests"
+    site_digests.mkdir(parents=True, exist_ok=True)
+
+    # 1. 复制所有 YYYY-MM-DD.md 到 site_digests/
+    copied = 0
+    for f in DIGEST_DIR.glob("????-??-??.md"):
+        shutil.copy2(f, site_digests / f.name)
+        copied += 1
+
+    # 2. 生成 index.json
+    dates = sorted([f.stem for f in site_digests.glob("????-??-??.md")], reverse=True)
+    index = [{"date": d} for d in dates]
+    (SITE_DIR / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=2))
+
+    # 3. 确保 index.html 存在（首次从同目录模板复制）
+    html_path = SITE_DIR / "index.html"
+    if not html_path.exists():
+        print(f"警告: {html_path} 不存在，请手动放置 index.html")
+
+    print(f"digest-site 已更新: {copied} 篇 → {SITE_DIR}")
+
+    # 4. 部署到 Vercel
+    if shutil.which("vercel") and (SITE_DIR / ".vercel").is_dir():
+        print("正在部署到 Vercel...")
+        result = subprocess.run(
+            ["vercel", "--yes", "--prod"],
+            cwd=SITE_DIR,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        if result.returncode == 0:
+            # 从输出中提取 URL
+            for line in result.stdout.splitlines():
+                if "https://" in line and "vercel.app" in line:
+                    print(f"已部署: {line.strip()}")
+                    break
+            else:
+                print("Vercel 部署完成")
+        else:
+            print(f"Vercel 部署失败: {result.stderr.strip()}")
+    elif not shutil.which("vercel"):
+        print("跳过部署: vercel CLI 未安装")
+    else:
+        print("跳过部署: 尚未初始化 Vercel 项目（先手动运行 vercel 一次）")
 
 
 # ── 主流程 ────────────────────────────────────────────────
@@ -536,7 +1093,38 @@ def main():
     parser.add_argument("--add-account", type=str, help="添加公众号")
     parser.add_argument("--remove-account", type=str, help="移除公众号")
     parser.add_argument("--sync-accounts", action="store_true", help="从 Chrome exporter 同步公众号列表")
+    # Feature 3: 阅读反馈
+    parser.add_argument("--mark-read", nargs="+", metavar=("DATE", "NUM"), help="标记已读: --mark-read 2026-02-20 1 3 5")
+    parser.add_argument("--stats", action="store_true", help="输出阅读统计")
+    # Feature 4: 选题辅助
+    parser.add_argument("--trends", action="store_true", help="输出最近 3 天热点趋势")
+    parser.add_argument("--search", type=str, metavar="KEYWORD", help="搜索知识库和简报中的文章")
+    parser.add_argument("--build-site", action="store_true", help="构建/更新 digest-site 静态站")
     args = parser.parse_args()
+
+    # Feature 3 子命令
+    if args.mark_read:
+        date = args.mark_read[0]
+        numbers = [int(n) for n in args.mark_read[1:]]
+        cmd_mark_read(date, numbers)
+        return
+
+    if args.stats:
+        cmd_stats()
+        return
+
+    # Feature 4 子命令
+    if args.trends:
+        cmd_trends()
+        return
+
+    if args.search:
+        cmd_search(args.search)
+        return
+
+    if args.build_site:
+        cmd_build_site()
+        return
 
     if manage_accounts(args):
         return
@@ -548,6 +1136,7 @@ def main():
     # 1. 检查 exporter
     if not check_exporter():
         log("exporter 服务不可达 (localhost:3000)，退出")
+        notify("AI 日报失败", "exporter 不可达 (localhost:3000)")
         sys.exit(1)
     log("exporter 服务正常")
 
@@ -558,6 +1147,23 @@ def main():
     except Exception as e:
         log(f"获取 auth-key 失败: {e}")
         log("请先在浏览器中登录 exporter (localhost:3000)")
+        notify("AI 日报失败", "auth-key 获取失败，请登录 exporter")
+        sys.exit(1)
+
+    # 2.5 健康检查：验证 auth-key 实际可用
+    try:
+        test_r = _api_get(
+            f"{EXPORTER_BASE}/api/web/mp/searchbiz",
+            params={"keyword": "虎嗅"},
+            headers={"X-Auth-Key": auth_key},
+        )
+        test_data = test_r.json()
+        if not test_data.get("list"):
+            raise ValueError("auth-key 验证失败：搜索返回空结果")
+        log("auth-key 验证通过")
+    except Exception as e:
+        log(f"auth-key 验证失败: {e}")
+        notify("AI 日报失败", "auth-key 过期或无效")
         sys.exit(1)
 
     # 3. 拉取所有公众号文章
@@ -621,6 +1227,14 @@ def main():
         f.write(digest_md)
 
     log(f"简报已生成: {digest_path}")
+    notify("AI 日报", f"{len(groups)} 条新文章 → digests/{today}.md")
+
+    # 更新 reading_profile 的 offered 计数
+    sources = [g[0].get("nickname", "") for g in groups if g]
+    _update_offered_count(len(groups), sources)
+
+    # 自动更新 digest-site
+    cmd_build_site()
 
     devlog({
         "type": "task",

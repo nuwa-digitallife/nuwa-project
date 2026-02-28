@@ -38,18 +38,34 @@ These concepts recur throughout the docs and should be understood when editing:
 - **nuwa-annotator** — heart/soul mapping tool for human-AI annotation
 - **nuwa-info-agent** — first self-replicating loop experiment
 
-## Claude 协作协议（必读）
+## ⛔ 每次会话必读文件（不论任务类型）
 
-**打开项目后必须先读** [`docs/claude-collaboration-protocol.md`](docs/claude-collaboration-protocol.md)。
+**无论是写作、自动化、调研还是任何任务，新会话必须先读以下文件。不读就开工 = 从零开始 = 浪费用户纠正成本。**
 
-### 为什么必读
+| 顺序 | 文件 | 内容 | 为什么必读 |
+|------|------|------|-----------|
+| 1 | Notion To-Do (`303994d02404813894b6c92e0616a5c9`) | 当前任务优先级 | 知道现在该做什么 |
+| 2 | `wechat/tools/AUTOMATION_PLAN.md` | 公众号自动化流水线计划 | 知道做到哪一步了、缺什么 |
+| 3 | `wechat/内容方法论.md` | 写作规则 + 三层记忆架构 + 配图规则 + Review checklist | 所有写作决策的根基 |
+| 4 | `docs/claude-collaboration-protocol.md` | 协作协议（沟通风格/行为检测/Notion读写规则） | 知道怎么和用户协作 |
+| 5 | `docs/zh/nuwa-plan.md` | 女娲计划完整愿景 | 理解所有子项目的终极目标 |
 
-这份协议是作者（Ciwang）个人认知、原则、行为模式的持续压缩产物。它同时也是女娲计划 Soul 层（公理记忆）的现实原型——作者本人就是第一个被压缩的「心智样本」。
+**公众号写作会话额外读**：人设档案 + experience.jsonl + 系列 lessons.md + 已发文章（详见 MEMORY.md 的 startup-guide）
 
-读懂这份协议，你就能：
-1. **按作者的原则协同**，而不是每次从零磨合——减少协同摩擦成本
-2. **减少人的心智投入**——不需要每次重复解释偏好、风格、禁区
-3. **理解女娲的设计意图**——协议本身就是「公理注入 + 记忆分层 + 压缩」的活体实验
+## 干预日志（循环2种子）
+
+**暗号**：用户说"记下这次干预"（或"记一下干预"、"log intervention"等类似表达），立刻追加一条到 `logs/interventions.jsonl`。
+
+**格式**：
+```json
+{"timestamp": "ISO 8601", "action": "一句话描述干预", "target": "改的系统部分", "trigger": "为什么改"}
+```
+
+**作用**：记录用户对循环1的每次"能力升级"操作（加信息源、建人设、改配置、造工具、调权重等）。不预设分类，跑几周后聚类，让循环2结构涌现。
+
+## Claude 协作协议
+
+详见 [`docs/claude-collaboration-protocol.md`](docs/claude-collaboration-protocol.md)。
 
 ### 核心要点
 

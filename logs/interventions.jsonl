@@ -1,0 +1,4 @@
+{"timestamp": "2026-02-28T16:30:00", "action": "建立干预日志机制：CLAUDE.md 加暗号规则 + logs/interventions.jsonl", "target": "logging / CLAUDE.md", "trigger": "devlog 记录不够细，Claude 长会话容易忘记写 log，需要用户主动触发的轻量记录方式"}
+{"timestamp": "2026-02-28T16:35:00", "action": "AUTOMATION_PLAN 补充双循环架构（循环1内容+循环2能力）、六层框架缺失层（目标函数/心智交互/自我强化）、公理PK机制（WS-5.6）、人设轮换自动检查（WS-5.7）、框架去重参考（WS-5.8弱约束）", "target": "AUTOMATION_PLAN.md / WS-5 反馈闭环", "trigger": "nuwa-insights.md 感悟和内容方法论中已有的机制未体现在自动化计划中，计划与实践脱节"}
+{"timestamp": "2026-02-28T16:45:00", "action": "审查 /start skill 是否写死文件路径，评估灵活性问题", "target": "skill / start", "trigger": "用户担心 skill 文件硬编码导致不灵活，新增文件或改路径时 skill 不会自动适应"}
+{"timestamp": "2026-02-28T17:00:00", "action": "/start skill 从硬编码文件路径改为索引驱动（.claude/startup-index.yaml），索引按三层继承：shared→nuwa(父)→wechat(子)。新增文件只需改索引，不用动 skill", "target": "skill / startup-index.yaml", "trigger": "skill 写死了文件路径，新增 interventions.jsonl 和 nuwa-insights.md 后 skill 不知道要读，且公众号作为女娲子项目应继承父层"}

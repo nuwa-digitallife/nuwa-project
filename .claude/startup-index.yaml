@@ -1,0 +1,59 @@
+# /start 启动索引
+# 层级继承：shared → nuwa（父项目）→ 子项目（wechat / 未来其他）
+# 读取规则：
+#   /start 公众号 → shared + nuwa + wechat
+#   /start 女娲   → shared + nuwa
+#   /start        → shared
+# 新增必读文件直接加到对应 section，不需要改 skill
+
+# ─── 第一层：所有会话共享 ───
+shared:
+  - path: "notion://303994d02404813894b6c92e0616a5c9"
+    desc: "To-Do 确认优先级"
+  - path: "docs/claude-collaboration-protocol.md"
+    desc: "协作协议"
+  - path: "logs/devlog.jsonl"
+    desc: "最近动态"
+    opts: "last 20"
+  - path: "logs/interventions.jsonl"
+    desc: "系统干预记录（循环2种子）"
+    opts: "last 10"
+
+# ─── 第二层：女娲（父项目，所有子项目继承） ───
+nuwa:
+  - path: "docs/zh/nuwa-plan.md"
+    desc: "女娲完整愿景"
+  - path: "docs/zh/nuwa-insights.md"
+    desc: "女娲感悟"
+  - path: "docs/zh/nuwa-progress.md"
+    desc: "女娲项目进度"
+  - path: "wechat/tools/AUTOMATION_PLAN.md"
+    desc: "自动化流水线进度"
+  - path: "notion://305994d02404819fa11ef6d394c719e8"
+    desc: "女娲 Notion 项目页"
+  - path: "notion://305994d024048194bb96cd8c77ad26fc"
+    desc: "协作协议 Notion 版（含认知模式）"
+  - path: "notion://303994d024048138bef8c542e4a63ce8"
+    desc: "认知热缓存"
+
+# ─── 第三层：公众号（子项目，继承 shared + nuwa） ───
+wechat:
+  - path: "wechat/内容方法论.md"
+    desc: "写作规则根基"
+  - path: "notion://308994d024048154b3b8c9d48686cc34"
+    desc: "公众号项目页"
+  - path: "wechat/人设/章北海.md"
+    desc: "默认人设（如 To-Do 指定其他人设则替换）"
+  - path: "wechat/experience.jsonl"
+    desc: "经验库（用当前选题关键词 grep）"
+    opts: "grep by topic"
+  - path: "wechat/公众号已发/{系列名}/lessons.md"
+    desc: "系列经验（如有对应系列）"
+  - path: "wechat/公众号选题/"
+    desc: "扫描进行中选题"
+    opts: "ls"
+
+# ─── 未来子项目示例 ───
+# upwork:
+#   - path: "upwork/config.yaml"
+#     desc: "Upwork bot 配置"

@@ -112,6 +112,39 @@ Ciwang，33岁，AI 工程师，阿里+字节10年经验，现在新加坡 TikTo
 
 **认知热缓存写入格式**：在现有内容末尾追加，带编号和日期
 ```
+
+## 4.6 人工干预记录（Claude 自动，双循环架构核心）
+
+**原理**：循环1（内容/代码生产）中每次人手动干预的地方 = 循环2（能力生产）的种子。记录干预 → 跑几周后 log 自己聚类 → 循环2结构涌现。不需要提前设计循环2，只需要忠实记录。
+
+**触发条件**：用户在 Claude 执行过程中纠正了方向、否定了方案、指出了遗漏。Claude 自动记录，不需要用户触发。
+
+**记录位置**：`logs/devlog.jsonl`，type 使用 `"intervention"`
+
+**记录格式**：
+```json
+{
+  "timestamp": "ISO 8601",
+  "project": "项目名",
+  "type": "intervention",
+  "context": "Claude 在做什么时被干预",
+  "claude_decision": "Claude 原本的决策/方案",
+  "user_correction": "用户纠正了什么",
+  "root_cause": "为什么 Claude 做错了（能力缺口分类）",
+  "fix": "怎么修的",
+  "capability_seed": "这个干预暗示系统需要什么能力（循环2种子）"
+}
+```
+
+**能力缺口分类**（root_cause 可选值）：
+- `interface_contract`：不了解已有系统的接口约定
+- `domain_knowledge`：缺少领域知识
+- `priority_mismatch`：判断优先级与用户不一致
+- `scope_creep`：做了超出范围的事
+- `missing_validation`：缺少验证步骤
+- `other`：无法归类
+
+**重要**：干预记录不是批评日志，是能力进化的原材料。每条记录的 `capability_seed` 字段是最有价值的——它指向系统下一步应该自动化的能力。
 #N [日期] 新认知的一句话描述
 补充说明（可选）
 ```
