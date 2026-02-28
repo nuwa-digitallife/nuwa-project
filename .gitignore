@@ -4,3 +4,8 @@
 *~
 .idea/
 .vscode/
+.env
+wechat/tools/*
+!wechat/tools/write_engine/
+!wechat/tools/topic_config.yaml
+wechat/tools/write_engine/__pycache__/

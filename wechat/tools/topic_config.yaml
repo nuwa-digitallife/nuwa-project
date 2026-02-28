@@ -1,0 +1,187 @@
+# 降临派手记 · 选题配置
+# 自动流水线读取此文件决定搜索方向
+
+# ============================================================
+# 长期偏好（自动模式每天搜索这些方向）
+# ============================================================
+auto_topics:
+  - name: 具身智能
+    keywords_cn: [具身智能, 人形机器人, 机械臂, 灵巧手, 操控, 仿真训练, VLA模型, 传感器]
+    keywords_en: [embodied AI, humanoid robot, dexterous manipulation, sim-to-real, robotics foundation model]
+    priority: 1
+
+  - name: 中美AI竞争
+    keywords_cn: [中美AI, 芯片制裁, AI人才, 出口管制, 算力, AI政策]
+    keywords_en: [US China AI, chip ban, AI talent war, export control, compute race]
+    priority: 2
+
+  - name: AI大模型前沿
+    keywords_cn: [大模型, 开源模型, 蒸馏, scaling law, 架构创新, MoE, 推理优化]
+    keywords_en: [LLM, open source model, distillation, scaling, architecture, reasoning model]
+    priority: 3
+
+  - name: AI工作室动态
+    keywords_cn: [OpenAI, Anthropic, DeepMind, Meta AI, 创始人, CTO, 离职, 内部文化]
+    keywords_en: [OpenAI, Anthropic, DeepMind, Meta AI, CEO blog, no more coding, internal culture, leadership]
+    # 特殊来源：关注创始人/高管的个人博客和社交媒体
+    special_sources:
+      - Sam Altman blog
+      - Dario Amodei blog/podcast
+      - Yann LeCun social
+      - Jim Fan social
+      - Andrej Karpathy blog/YouTube
+    priority: 4
+
+  - name: AI应用落地
+    keywords_cn: [AI Agent, AI编程, AI医疗, AI金融, Cursor, Copilot, 具身智能应用]
+    keywords_en: [AI agent, AI coding, vibe coding, AI healthcare, AI finance, agentic workflow]
+    priority: 5
+
+# ============================================================
+# 搜索配置
+# ============================================================
+search:
+  # 时间窗口
+  lookback_days: 3
+
+  # 中文源：从 exporter API 的关注号抓取
+  cn_source: exporter_api  # localhost:3000
+
+  # 英文源：web search
+  en_source: web_search
+  en_domains:
+    - techcrunch.com
+    - theverge.com
+    - arstechnica.com
+    - wired.com
+    - bloomberg.com
+    - reuters.com
+    - arxiv.org
+    - huggingface.co/blog
+
+  # 每个偏好方向最多返回几篇素材
+  max_articles_per_topic: 10
+
+# ============================================================
+# 选题推荐
+# ============================================================
+recommendation:
+  # 每天推荐几个选题
+  num_topics: 3
+
+  # 排序权重
+  weights:
+    heat: 0.4        # 多少个源在讨论
+    timeliness: 0.3  # 越新越好
+    uniqueness: 0.2   # 降临派手记还没写过的角度
+    depth: 0.1        # 素材是否足够支撑深度文章
+
+# ============================================================
+# 人设自动匹配
+# ============================================================
+persona_matching:
+  调查型: 大史    # 扒皮/争议/动态（如 Anthropic 蒸馏）
+  分析型: 章北海  # 格局/趋势/科普（如 世界模型科普）
+  # 罗辑暂停使用，用户+朋友反馈语气傲慢（2026-02-24）
+
+# ============================================================
+# 模型与 effort（集中管理，各阶段读取）
+# ============================================================
+# 改这里就能统一调整全流水线的模型/effort
+models:
+  # Phase 1.5: 深度素材采集
+  deep_research:
+    model: opus
+    effort: high
+    tools: "WebSearch,WebFetch,Read"
+    timeout: 900       # 秒
+
+  # Phase 2: 写作引擎（Pass 1→2→3→3.5→4）
+  write_engine:
+    model: opus
+    pass_effort:       # Pass 1-4 独立 effort
+      1: high          # 写作（创作为主，需要深度思考）
+      2: high          # 事实核查（交叉验证需要推理链）
+      3: high          # 审视三层恰（只出报告，多维度评估）
+      4: medium        # 整合（合并+格式化，不需要深度思考）
+    pass_tools:
+      1: "Read,Grep,Glob,WebSearch,WebFetch"
+      2: "WebSearch,WebFetch,Read"
+      3: "WebSearch,WebFetch,Read"
+      4: "Read"
+    pass_timeout:        # 秒；WebSearch 的 pass 给更长超时
+      1: 900
+      2: 1200            # 事实核查需要大量搜索
+      3: 1200            # Review 也可能需要搜索验证
+      4: 600             # 整合不需要搜索，给短超时
+    # Pass 3.5 协商闭环各阶段 effort
+    pass3b_effort:
+      write_respond: high    # Writing Agent 回应（需要深度思考辩护）
+      fact_respond: high     # Fact Agent 回应（需要搜索验证）
+      evaluate: high         # Review Agent 评估裁定
+      revise: high           # Writing Agent 执行修改
+      fact_revise: high      # Fact Agent 执行事实修改
+      verify: high           # Review Agent 验收
+    pass3b_tools:
+      write_respond: "Read"
+      fact_respond: "WebSearch,WebFetch,Read"
+      evaluate: "Read"
+      revise: "Read"
+      fact_revise: "WebSearch,WebFetch,Read"
+      verify: "Read"
+    # Pass 5: 迭代求导（证据硬化循环）
+    pass5_effort:
+      weakness: high             # 证据审计需要深度思考
+      targeted_research: high    # 定向调研需要推理链
+      rewrite: high              # 重写需要保持人设+叙事连贯
+      compare: medium            # 版本对比，相对机械
+    pass5_tools:
+      weakness: "Read"
+      targeted_research: "WebSearch,WebFetch,Read"
+      rewrite: "Read"
+      compare: "Read"
+    pass5_timeout:
+      weakness: 600
+      targeted_research: 1200
+      rewrite: 900
+      compare: 600
+
+  # 配图采集（实物图+数据图 用 claude -p）
+  image_collector:
+    model: opus
+    effort: high
+    tools: "WebSearch,WebFetch,Bash,Read"
+    timeout: 600
+
+  # 封面图 / AI配图（Gemini API，不走 claude -p）
+  gemini:
+    model: gemini-2.0-flash-exp-image-generation
+    # API key 在 .env 文件中：GEMINI_API_KEY=xxx
+
+# ============================================================
+# 迭代求导参数（Pass 5）
+# ============================================================
+iteration:
+  max_iterations: 2              # 默认最多迭代2轮（v1→v2→v3）
+
+# ============================================================
+# 协商共识参数
+# ============================================================
+consensus:
+  max_rounds: 2              # 最多协商几轮（每轮 = 回应 + 评估）
+  num_revision_entries: 2    # 预留（未来可限制单轮最大修改条数）
+
+# ============================================================
+# 输出结构
+# ============================================================
+output:
+  base_dir: wechat/公众号选题
+  # 每个选题的目录结构：
+  # {base_dir}/{日期}|{选题名}/
+  #   素材/
+  #     {公众号名}/摘要.md
+  #     英文源/{来源}.md
+  #   article.md
+  #   article-mdnice.md
+  #   images/
+  #   publish-guide.md
