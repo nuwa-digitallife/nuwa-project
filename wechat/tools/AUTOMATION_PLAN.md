@@ -14,9 +14,18 @@
 | **人设与系列自主设计** | Agent 自主设计新人设、规划系列结构、选择执笔角色 | 🟡 已有调研和提案 |
 | **自我迭代与反馈学习** | 读取数据，对比分析，自动优化选题/写作/人设策略 | ⬜ 未开始 |
 
-**当前聚焦：MVP E2E 测试 → 质量进化**
+**当前聚焦：周末冲刺 → 全链路闭环**
 
-**当前状态**：写作引擎代码完成（含协商闭环 + Pass 5 迭代求导），E2E 验证通过。演进路线图已制定。
+**当前状态**：写作引擎+发布自动化+批量模式+新闻反应管道全部代码完成。待实测验证。
+
+### 场景愿景（2026-02-28 定义）
+
+| 层级 | 场景 | 人的参与 | 状态 |
+|------|------|---------|------|
+| **T0** | 一键发布（30min→2min） | 确认发布 | 🟡 代码完成，待实测 |
+| **T1** | 批量备稿（7篇存量） | 审稿+标记 ✅/❌ | 🟡 --batch 模式完成 |
+| **T2** | 新闻反应（链接→草稿） | 发链接+指令 | 🟡 react.py 完成 |
+| **T3** | 幽灵（能力自我增长） | 确认提案 | 🟡 ghost_analyze.py demo |
 
 **详细演进路线图**：[`write_engine/PLAN_evolution_roadmap.md`](../../write_engine/PLAN_evolution_roadmap.md)
 
@@ -133,14 +142,13 @@ AUTOMATION_PLAN 已覆盖：构建原子（WS-1~4）、反馈链路（WS-5/9）�
 
 | ID | 任务 | 状态 | 文件 | 备注 |
 |----|------|------|------|------|
-| 4.1 | ~~Markdown→HTML 本地渲染~~ | ❌ **已废弃** | ~~`publish/md_to_html.py`~~ | 用户否决。改用 mdnice 网站粘贴排版 |
-| 4.1b | mdnice 排版 | 🟡 人工 | — | article_mdnice.md 粘贴到 mdnice → 复制到微信编辑器 |
-| 4.2 | 正文注入微信编辑器 | ✅ 完成 | `wechat/tools/publish/inject_js.py` | UTF-8 已修复（备选方案，和 mdnice 粘贴二选一） |
-| 4.3 | 图片上传 | ✅ 完成 | `wechat/tools/publish/https_server.py` + `js/upload_image.js` | HTTPS本地服务器方案 |
-| 4.4 | 标题/简介/封面设置 | 🟡 有JS脚本 | `js/set_title.js` `js/set_description.js` | 需要 Chrome 已登录 |
-| 4.5 | 原创声明+赞赏 | 🟡 有JS脚本 | `js/enable_original_reward.js` | 需测试稳定性 |
-| 4.6 | 投票创建 | ❌ 未开始 | — | 目前只能手动 |
-| 4.7 | 端到端发布脚本 | ❌ 未开始 | — | 串联 4.1-4.6 成一键发布 |
+| 4.1 | mdnice 浏览器自动排版 | 🟡 代码完成 | `one_click_publish.py` → `mdnice_render()` | Playwright 打开 mdnice.com → 粘贴 md → 选橙心主题 → 复制富文本。**不用本地渲染** |
+| 4.2 | 正文注入微信编辑器 | ✅ 完成 | `publish/inject_js.py` + `publish/wechat_automator.py` | Playwright CDP 方案（新）+ AppleScript 方案（旧） |
+| 4.3 | 图片上传 | ✅ 完成 | `publish/https_server.py` + `js/upload_image.js` | HTTPS本地服务器方案 |
+| 4.4 | 标题/简介/封面设置 | ✅ 完成 | `js/set_title.js` `js/set_description.js` | Playwright CDP 自动执行 |
+| 4.5 | 原创声明+赞赏 | ✅ 完成 | `js/enable_original_reward.js` | Playwright CDP 自动执行 |
+| 4.6 | 投票创建 | ❌ 手动 | — | 目前只能手动在微信后台添加 |
+| 4.7 | 端到端发布脚本 | 🟡 代码完成 | `publish/one_click_publish.py` | 串联 render→clipboard→paste→title→images→original→save。待实测 |
 
 ### WS-5: 反馈闭环
 
@@ -183,9 +191,12 @@ AUTOMATION_PLAN 已覆盖：构建原子（WS-1~4）、反馈链路（WS-5/9）�
 
 | ID | 任务 | 状态 | 依赖 | 备注 |
 |----|------|------|------|------|
-| 8.1 | 浏览器池（Browser Pool） | ⬜ TODO | — | 长驻 Playwright 进程 / Chrome CDP 直连 |
-| 8.2 | 端到端发布脚本 | ⬜ TODO | 8.1 | `one_click_publish.py` 串联 4.1-4.6 |
-| 8.3 | Mac Mini 多端同步 | ⬜ TODO | — | Git 自动 commit+push + setup_new_machine.sh |
+| 8.1 | 浏览器池（Chrome CDP） | 🟡 代码完成 | `publish/wechat_automator.py` | Playwright CDP 连接 Chrome --remote-debugging-port=9222 |
+| 8.2 | 端到端发布脚本 | 🟡 代码完成 | `publish/one_click_publish.py` | 串联 render→clipboard→paste→全部元数据→保存 |
+| 8.3 | Mac Mini 部署 | 🟡 脚本完成 | `scripts/setup_mac_mini.sh` | 一键安装依赖+Playwright+证书 |
+| 8.4 | 批量发布 | 🟡 代码完成 | `run_pipeline.sh --publish-all` | 对所有已完成文章串行调用 one_click_publish |
+| 8.5 | 新闻反应管道 | 🟡 代码完成 | `react.py` | URL→获取→选题→调研→写作→通知 |
+| 8.6 | Ghost 能力缺口分析 | 🟡 demo完成 | `ghost_analyze.py` | 事件溯源→能力对照→缺口提案 |
 
 ### WS-9: 反馈数据采集（演进路线图 §五）
 
@@ -232,10 +243,10 @@ AUTOMATION_PLAN 已覆盖：构建原子（WS-1~4）、反馈链路（WS-5/9）�
 | ~~P1~~ | ~~7.1-7.4 Pass 5 迭代求导~~ | ✅ 完成 |
 | **P1** | **6.2 收敛搜索** | deep_research.py 改为循环，新信息 <20% 时收敛 |
 | **P1** | **6.3 素材质量自评估** | 信源数/一手源/观点多样性/数据点 自动评分 |
-| **P2** | **8.2 端到端发布脚本** | one_click_publish.py 串联所有发布步骤 |
+| ~~P2~~ | ~~8.2 端到端发布脚本~~ | 🟡 代码完成，待实测 |
 | **P2** | **6.1 插件化素材源** | SourcePlugin 基类，新源只需一个 py 文件 |
-| **P2** | **8.1 浏览器池** | Chrome CDP 直连 / 长驻 Playwright |
-| **P2** | **8.3 Mac Mini 多端同步** | Git 自动同步 + setup_new_machine.sh |
+| ~~P2~~ | ~~8.1 浏览器池~~ | 🟡 wechat_automator.py (Playwright CDP) 完成 |
+| ~~P2~~ | ~~8.3 Mac Mini 多端同步~~ | 🟡 setup_mac_mini.sh 完成 |
 | **P2** | **9.1-9.2 微信后台数据** | Playwright 爬取 + launchd 定时 |
 | **P3** | **10.1-10.2 丁仪人设 + 拆机系列** | 覆盖模型发布空白，需用户确认 |
 | **P3** | **9.3-9.4 数据驱动优化** | 需攒够数据 |
@@ -325,3 +336,4 @@ E2E 测试通过后，三台机器并行开发，按目录边界隔离避免冲�
 | 2026-02-27 | **三机并行协同方案确定** — 本机(引擎核心/opus) + Mac Mini(后台采集/sonnet) + MacBook(发布+反馈/sonnet+GUI)。按目录边界隔离，Git feature branch 协同。engine.py 修复嵌套调用（env -u CLAUDECODE）。E2E sonnet 管道测试启动。 | Ciwang + Claude (麦老) |
 | 2026-02-28 | **感悟→计划回传** — 从 nuwa-insights.md + 内容方法论对照 AUTOMATION_PLAN 缺口，补充：①双循环架构（循环1内容+循环2能力）②六层框架缺失层（目标函数/心智交互/自我强化）③公理PK机制（WS-5.6）④人设轮换自动检查（WS-5.7）⑤框架去重参考（WS-5.8，弱约束）。架构总览图更新。 | Ciwang + Claude (麦老) |
 | 2026-02-28 | **WS-7 Pass 5 迭代求导完成** — 4个prompt模板(weakness/targeted_research/rewrite/compare) + context_loader 4个assemble方法 + engine.py 5个函数 + CLI --iterate/--max-iterations。E2E验证通过（机器人棋局，sonnet，1轮：10个P1→算术修正+CMO具名+过渡句升级→CONVERGED）。write_engine/ 全量入库 git。人工干预：article.md 接口契约→双写设计。协作协议新增 §4.6 人工干预记录规则。 | Ciwang + Claude (麦老) |
+| 2026-02-28 | **周末冲刺代码全部完成** — T0: publish/render_html.py(本地CSS渲染) + clipboard_html.py(AppKit剪贴板) + wechat_automator.py(Playwright CDP) + one_click_publish.py(端到端) + theme_orange.css + scripts/setup_mac_mini.sh。T1: run_pipeline.sh --batch N + --publish-all + --persona + topic_pipeline.py --num-topics。T2: react.py(新闻反应管道)。T3: ghost_analyze.py(能力缺口demo) + prompts/ghost_gap_analysis.md。场景愿景(T0-T3)写入AUTOMATION_PLAN。 | Claude (麦老) |

@@ -1,0 +1,193 @@
+/*
+ * 橙心主题 — 降临派手记专用
+ * 用于 render_html.py 将 markdown 渲染为带内联 CSS 的 HTML
+ * 微信公众号兼容（无外部字体/CDN）
+ *
+ * 设计原则：
+ * - 正文 16px，行高 1.8，#3f3f3f
+ * - 标题用橙色 (#ff6827) 强调
+ * - 引用块左橙色边框 + 浅灰背景
+ * - 表格交替行底色
+ * - 链接橙色，图片居中
+ */
+
+/* ── 全局 ── */
+section {
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+                 "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 16px;
+    line-height: 1.8;
+    color: #3f3f3f;
+    word-break: break-word;
+    padding: 0 8px;
+}
+
+/* ── 标题 ── */
+section h1 {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff6827;
+    text-align: center;
+    margin: 1.5em 0 0.8em;
+    line-height: 1.4;
+}
+
+section h2 {
+    font-size: 20px;
+    font-weight: bold;
+    color: #ff6827;
+    margin: 1.5em 0 0.6em;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #ff6827;
+    line-height: 1.4;
+}
+
+section h3 {
+    font-size: 17px;
+    font-weight: bold;
+    color: #ff6827;
+    margin: 1.2em 0 0.4em;
+    line-height: 1.4;
+}
+
+section h4 {
+    font-size: 16px;
+    font-weight: bold;
+    color: #555;
+    margin: 1em 0 0.3em;
+    line-height: 1.4;
+}
+
+/* ── 段落 ── */
+section p {
+    margin: 0.8em 0;
+    text-align: justify;
+}
+
+/* ── 加粗 ── */
+section strong {
+    color: #ff6827;
+    font-weight: bold;
+}
+
+/* ── 链接 ── */
+section a {
+    color: #ff6827;
+    text-decoration: none;
+    border-bottom: 1px solid #ff6827;
+}
+
+/* ── 引用块 ── */
+section blockquote {
+    margin: 1em 0;
+    padding: 12px 16px;
+    border-left: 4px solid #ff6827;
+    background-color: #fff9f5;
+    color: #666;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+section blockquote p {
+    margin: 0.3em 0;
+}
+
+/* ── 列表 ── */
+section ul, section ol {
+    margin: 0.6em 0;
+    padding-left: 2em;
+}
+
+section li {
+    margin: 0.3em 0;
+}
+
+/* ── 分割线 ── */
+section hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 1.5em 0;
+}
+
+/* ── 表格 ── */
+section table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 14px;
+}
+
+section th {
+    background-color: #ff6827;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 12px;
+    text-align: left;
+    border: 1px solid #e0e0e0;
+}
+
+section td {
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+}
+
+section tr:nth-child(even) td {
+    background-color: #fafafa;
+}
+
+section tr:hover td {
+    background-color: #fff5ef;
+}
+
+/* ── 代码 ── */
+section code {
+    font-family: "SFMono-Regular", Menlo, monospace;
+    font-size: 14px;
+    background-color: #f6f6f6;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #e96900;
+}
+
+section pre {
+    background-color: #2b2b2b;
+    color: #f8f8f2;
+    padding: 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 1em 0;
+}
+
+section pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+    border-radius: 0;
+}
+
+/* ── 图片 ── */
+section img {
+    max-width: 100%;
+    display: block;
+    margin: 1em auto;
+    border-radius: 4px;
+}
+
+/* ── 脚注 ── */
+section .footnote {
+    font-size: 13px;
+    color: #999;
+    margin-top: 2em;
+    padding-top: 1em;
+    border-top: 1px solid #eee;
+}
+
+/* ── 署名 ── */
+section .byline {
+    text-align: center;
+    font-size: 14px;
+    color: #999;
+    margin: 2em 0 0.5em;
+}

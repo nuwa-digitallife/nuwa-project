@@ -7,6 +7,13 @@
 .env
 wechat/tools/*
 !wechat/tools/write_engine/
+!wechat/tools/publish/
 !wechat/tools/topic_config.yaml
+!wechat/tools/topic_pipeline.py
+!wechat/tools/run_pipeline.sh
+!wechat/tools/react.py
+!wechat/tools/ghost_analyze.py
 !wechat/tools/AUTOMATION_PLAN.md
+!wechat/tools/PLAN_weekend_sprint.md
 wechat/tools/write_engine/__pycache__/
+wechat/tools/publish/__pycache__/
