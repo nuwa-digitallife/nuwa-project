@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>qqinvest — AI 投研助手</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #1a1f2e;
+      border-bottom: 1px solid #2d3748;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { font-size: 18px; font-weight: 700; color: #f7fafc; }
+    header .tagline { font-size: 12px; color: #718096; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #2d3748;
+      background: #1a1f2e;
+      padding: 0 32px;
+    }
+    .tab-btn {
+      padding: 11px 22px;
+      border: none;
+      background: transparent;
+      color: #718096;
+      font-size: 13px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tab-btn:hover { color: #e2e8f0; }
+    .tab-btn.active { color: #63b3ed; border-bottom-color: #63b3ed; }
+    /* ── Content ── */
+    .tab-panel { display: none; padding: 28px 32px; max-width: 960px; margin: 0 auto; }
+    .tab-panel.active { display: block; }
+
+    .card {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+    .card h2 { font-size: 15px; color: #f7fafc; margin-bottom: 14px; font-weight: 600; }
+
+    label { display: block; font-size: 12px; color: #a0aec0; margin-bottom: 5px; }
+
+    input[type="text"], textarea, select {
+      width: 100%;
+      background: #0f1117;
+      border: 1px solid #2d3748;
+      border-radius: 6px;
+      color: #e2e8f0;
+      padding: 9px 13px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus, textarea:focus { border-color: #63b3ed; }
+    textarea { resize: vertical; font-family: monospace; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      border-radius: 6px;
+      border: none;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: #3182ce; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #2b6cb0; }
+    .btn-primary:disabled { background: #2d3748; color: #718096; cursor: not-allowed; }
+    .btn-secondary {
+      background: #2d3748; color: #a0aec0;
+      border: 1px solid #4a5568;
+    }
+    .btn-secondary:hover { background: #374151; color: #e2e8f0; }
+
+    .hint { font-size: 11px; color: #718096; margin-top: 5px; line-height: 1.5; }
+    .error-msg { font-size: 12px; color: #fc8181; margin-top: 7px; }
+
+    .row { display: flex; gap: 12px; align-items: flex-end; }
+    .row .grow { flex: 1; }
+
+    /* ── 进度区 ── */
+    .progress-area {
+      display: none;
+      background: #0f1117;
+      border: 1px solid #2d3748;
+      border-radius: 6px;
+      padding: 14px;
+      margin-top: 14px;
+    }
+    .progress-area.show { display: block; }
+    .progress-label { font-size: 12px; color: #a0aec0; margin-bottom: 7px; }
+    .progress-bar-wrap {
+      background: #2d3748;
+      border-radius: 4px;
+      height: 5px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #3182ce, #63b3ed);
+      border-radius: 4px;
+      transition: width 0.5s;
+      width: 0%;
+    }
+    .progress-bar.indeterminate {
+      width: 40%;
+      animation: slide 1.5s infinite ease-in-out;
+    }
+    @keyframes slide { 0%{transform:translateX(-150%)} 100%{transform:translateX(350%)} }
+    .progress-text { font-size: 11px; color: #718096; font-family: monospace; }
+
+    /* ── 结果区 ── */
+    .result-area { margin-top: 20px; }
+
+    /* ── 素材上传 Drop Zone ── */
+    .drop-zone {
+      border: 2px dashed #2d3748;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #0f1117;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: #3182ce;
+      background: #0d1929;
+    }
+    .drop-zone p { font-size: 13px; color: #718096; }
+    .drop-zone .drop-icon { font-size: 28px; margin-bottom: 6px; }
+    .drop-zone input[type="file"] { display: none; }
+    .file-name { font-size: 12px; color: #68d391; margin-top: 6px; }
+
+    /* ── 方法论说明块 ── */
+    .method-box {
+      background: #0d1929;
+      border: 1px solid #1e3a5f;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+    }
+    .method-box .mb-title { font-size: 11px; color: #63b3ed; font-weight: 600; margin-bottom: 6px; }
+    .method-box ol { padding-left: 16px; }
+    .method-box li { font-size: 11px; color: #718096; line-height: 1.8; }
+    .method-box li strong { color: #a0aec0; }
+
+    /* ── Round 2 股票卡片 ── */
+    .stock-cards { display: grid; gap: 16px; }
+    .stock-card {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .stock-card-header {
+      padding: 12px 18px;
+      background: #16213e;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .stock-name { font-size: 15px; font-weight: 600; }
+    .stock-code { font-size: 12px; color: #718096; }
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 14px 18px;
+    }
+    .score-item { text-align: center; }
+    .score-item .label { font-size: 10px; color: #718096; margin-bottom: 5px; }
+    .score-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .score-high { background: #276749; color: #68d391; }
+    .score-mid  { background: #744210; color: #f6ad55; }
+    .score-low  { background: #742a2a; color: #fc8181; }
+    .score-neutral { background: #2d3748; color: #a0aec0; }
+    .stock-card-body { padding: 14px 18px; }
+    .bull-bear { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .bull-bear h4 { font-size: 11px; margin-bottom: 5px; }
+    .bull h4 { color: #68d391; }
+    .bear h4 { color: #fc8181; }
+    .bull-bear ul { list-style: none; }
+    .bull-bear li { font-size: 11px; color: #a0aec0; line-height: 1.6; }
+    .bull-bear li::before { content: "• "; }
+    .action-box {
+      background: #0f1117;
+      border-radius: 5px;
+      padding: 9px 13px;
+      font-size: 12px;
+      color: #e2e8f0;
+      border-left: 3px solid #3182ce;
+    }
+
+    /* ── Markdown 渲染 ── */
+    .report-md {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      padding: 28px;
+      line-height: 1.8;
+      font-size: 13px;
+    }
+    .report-md h1 { font-size: 20px; color: #f7fafc; margin-bottom: 14px; border-bottom: 1px solid #2d3748; padding-bottom: 10px; }
+    .report-md h2 { font-size: 16px; color: #f7fafc; margin: 22px 0 10px; }
+    .report-md h3 { font-size: 14px; color: #e2e8f0; margin: 16px 0 7px; }
+    .report-md p { color: #cbd5e0; margin-bottom: 9px; }
+    .report-md ul, .report-md ol { padding-left: 18px; color: #cbd5e0; margin-bottom: 9px; }
+    .report-md li { margin-bottom: 3px; }
+    .report-md table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+    .report-md th { background: #2d3748; padding: 7px 10px; text-align: left; color: #e2e8f0; border: 1px solid #4a5568; }
+    .report-md td { padding: 7px 10px; color: #a0aec0; border: 1px solid #2d3748; }
+    .report-md tr:nth-child(even) td { background: #16213e; }
+    .report-md code { background: #2d3748; padding: 1px 5px; border-radius: 3px; font-family: monospace; }
+    .report-md blockquote { border-left: 3px solid #4a5568; padding-left: 10px; color: #718096; margin: 7px 0; }
+    .report-md strong { color: #f7fafc; }
+
+    /* ── 历史任务 ── */
+    .history-section { margin-top: 28px; }
+    .history-section h3 { font-size: 12px; color: #718096; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .history-list { display: flex; flex-direction: column; gap: 6px; }
+    .history-item {
+      background: #1a1f2e;
+      border: 1px solid #2d3748;
+      border-radius: 6px;
+      padding: 9px 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .history-item:hover { border-color: #4a5568; }
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      display: inline-block; margin-right: 7px; flex-shrink: 0;
+    }
+    .status-dot.done { background: #68d391; }
+    .status-dot.running { background: #f6ad55; animation: pulse 1s infinite; }
+    .status-dot.failed { background: #fc8181; }
+    .status-dot.pending { background: #718096; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .badge { padding: 1px 7px; border-radius: 8px; font-size: 10px; background: #2d3748; color: #a0aec0; }
+
+    /* ── 推荐提示 ── */
+    .next-step-hint {
+      margin-top: 16px;
+      background: #0d1929;
+      border: 1px solid #1e3a5f;
+      border-radius: 6px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .next-step-hint p { font-size: 12px; color: #63b3ed; }
+    .next-step-hint .btn-ghost {
+      background: transparent;
+      border: 1px solid #2b6cb0;
+      color: #63b3ed;
+      padding: 5px 12px;
+      border-radius: 5px;
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .next-step-hint .btn-ghost:hover { background: #1e3a5f; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ───────────────────────────────────────── -->
+<header>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#63b3ed" stroke-width="2">
+    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+  </svg>
+  <h1>qqinvest</h1>
+  <span class="tagline">A股 AI 投研助手</span>
+</header>
+
+<!-- ── Tabs ─────────────────────────────────────────── -->
+<div class="tabs">
+  <button class="tab-btn active" id="tab-btn-round1" onclick="switchTab('round1')">📋 行业研报</button>
+  <button class="tab-btn" id="tab-btn-upload" onclick="switchTab('upload')">📁 素材上传分析</button>
+  <button class="tab-btn" id="tab-btn-round2" onclick="switchTab('round2')">📊 个股量化</button>
+</div>
+
+<!-- ══════════════════ Tab: 行业研报 (Round 1) ══════════════════ -->
+<div id="tab-round1" class="tab-panel active">
+  <div class="card">
+    <h2>行业主观研报生成</h2>
+    <label>目标行业</label>
+    <input type="text" id="r1-sector" placeholder="例：特种机器人、新能源储能、人形机器人、半导体设备" maxlength="50">
+    <div id="r1-validate-msg" class="hint"></div>
+    <div id="r1-error" class="error-msg" style="display:none;"></div>
+    <br>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="r1-btn" onclick="submitRound1()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        生成研报
+      </button>
+      <span class="hint">预计 30-60 分钟（Pass 1 网络采集 + Pass 2 研报撰写）</span>
+    </div>
+  </div>
+
+  <div id="r1-progress" class="progress-area">
+    <p class="progress-label">生成进度</p>
+    <div class="progress-bar-wrap"><div class="progress-bar indeterminate" id="r1-pbar"></div></div>
+    <p class="progress-text" id="r1-ptext">正在初始化...</p>
+  </div>
+
+  <div id="r1-result" class="result-area"></div>
+
+  <div class="history-section">
+    <h3>历史任务</h3>
+    <div class="history-list" id="r1-history"></div>
+  </div>
+
+  <div class="history-section">
+    <h3>已生成报告（直接下载）</h3>
+    <div class="history-list" id="reports-list"></div>
+  </div>
+</div>
+
+<!-- ══════════════════ Tab: 素材上传分析 ══════════════════ -->
+<div id="tab-upload" class="tab-panel">
+  <div class="method-box">
+    <div class="mb-title">📌 这个功能做什么？</div>
+    <ol>
+      <li><strong>上传你的原始素材</strong>：研报节选、财报段落、新闻稿、调研记录……任意格式文本</li>
+      <li><strong>AI 提炼结构化数据</strong>：自动提取公司信息、订单数据、政策信号、市场规模等关键要素</li>
+      <li><strong>方法论框架对齐</strong>：按五节投研框架（纯度分层 / 产业链 / 成长节奏 / 市场信号 / 综合研判）输出报告</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>素材上传 + 方法论对齐</h2>
+
+    <label>行业方向（告诉 AI 应该套哪个赛道框架）</label>
+    <input type="text" id="ru-sector" placeholder="例：特种机器人、新能源储能、人形机器人" maxlength="50" style="margin-bottom:14px;">
+
+    <label>原始素材（粘贴文本，或点击上传文件）</label>
+    <div class="drop-zone" id="ru-drop" onclick="document.getElementById('ru-file-input').click()"
+         ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+      <div class="drop-icon">📄</div>
+      <p>点击选择文件，或拖拽到这里</p>
+      <p style="font-size:11px;margin-top:3px;">支持 .txt / .md / .pdf（文字版）</p>
+      <div class="file-name" id="ru-file-name"></div>
+      <input type="file" id="ru-file-input" accept=".txt,.md,.pdf" onchange="handleFileSelect(event)">
+    </div>
+
+    <div style="margin:12px 0;font-size:11px;color:#4a5568;text-align:center;">— 或直接粘贴文本 —</div>
+
+    <textarea id="ru-content" rows="8" placeholder="把你的研报节选、财报段落、调研笔记粘贴到这里……&#10;&#10;不需要格式化，AI 会自动提炼。"></textarea>
+    <p class="hint" id="ru-char-count">0 字符</p>
+
+    <div id="ru-error" class="error-msg" style="display:none;"></div>
+    <br>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="ru-btn" onclick="submitUpload()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        开始分析
+      </button>
+      <span class="hint">预计 5-20 分钟（只跑 Pass 2，不采集网络数据）</span>
+    </div>
+  </div>
+
+  <div id="ru-progress" class="progress-area">
+    <p class="progress-label">分析进度</p>
+    <div class="progress-bar-wrap"><div class="progress-bar indeterminate" id="ru-pbar"></div></div>
+    <p class="progress-text" id="ru-ptext">正在初始化...</p>
+  </div>
+
+  <div id="ru-result" class="result-area"></div>
+
+  <div class="history-section">
+    <h3>历史任务</h3>
+    <div class="history-list" id="ru-history"></div>
+  </div>
+</div>
+
+<!-- ══════════════════ Tab: 个股量化 (Round 2) ══════════════════ -->
+<div id="tab-round2" class="tab-panel">
+  <div class="card">
+    <h2>个股量化信号分析</h2>
+    <label>A股代码（最多5只，空格或换行分隔）</label>
+    <textarea id="r2-stocks" placeholder="603666&#10;688290&#10;601608" rows="3"></textarea>
+    <p class="hint">6位纯数字代码。可从行业研报的「推荐标的」中复制</p>
+    <div id="r2-error" class="error-msg" style="display:none;"></div>
+    <br>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="r2-btn" onclick="submitRound2()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        开始分析
+      </button>
+      <span class="hint">预计 3-15 分钟（每只约3分钟）</span>
+    </div>
+  </div>
+
+  <div id="r2-progress" class="progress-area">
+    <p class="progress-label">分析进度</p>
+    <div class="progress-bar-wrap"><div class="progress-bar indeterminate" id="r2-pbar"></div></div>
+    <p class="progress-text" id="r2-ptext">正在初始化...</p>
+  </div>
+
+  <div id="r2-result" class="result-area"></div>
+
+  <div class="history-section">
+    <h3>历史任务</h3>
+    <div class="history-list" id="r2-history"></div>
+  </div>
+</div>
+
+<!-- ══════════════════ JavaScript ══════════════════ -->
+<script>
+// ── Tab 切换 ──────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('tab-btn-' + tab).classList.add('active');
+  loadHistory(tab);
+}
+
+// ── 轮询 ──────────────────────────────────────────────
+let pollTimers = {};
+
+function startPolling(jobId, prefix) {
+  if (pollTimers[jobId]) clearInterval(pollTimers[jobId]);
+  pollTimers[jobId] = setInterval(() => pollJob(jobId, prefix), 3000);
+  pollJob(jobId, prefix);
+}
+
+async function pollJob(jobId, prefix) {
+  try {
+    const res = await fetch(`/api/job/${jobId}`);
+    const job = await res.json();
+    const ptext = document.getElementById(prefix + '-ptext');
+    if (ptext) ptext.textContent = job.progress || job.status;
+
+    if (job.status === 'done') {
+      clearInterval(pollTimers[jobId]);
+      const pbar = document.getElementById(prefix + '-pbar');
+      if (pbar) { pbar.classList.remove('indeterminate'); pbar.style.width = '100%'; }
+      renderResult(prefix, job);
+      enableBtn(prefix);
+      const typeMap = {r1: 'round1', ru: 'upload', r2: 'round2'};
+      loadHistory(typeMap[prefix]);
+    } else if (job.status === 'failed') {
+      clearInterval(pollTimers[jobId]);
+      showError(prefix, job.error || '任务失败');
+      enableBtn(prefix);
+      const pbar = document.getElementById(prefix + '-pbar');
+      if (pbar) { pbar.classList.remove('indeterminate'); pbar.style.width = '0'; }
+    }
+  } catch(e) { console.error('poll:', e); }
+}
+
+// ── 按钮状态 ──────────────────────────────────────────
+const BTN_LABELS = {
+  r1: '生成研报',
+  ru: '开始分析',
+  r2: '开始分析',
+};
+
+function disableBtn(prefix) {
+  const btn = document.getElementById(prefix + '-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '运行中...'; }
+}
+
+function enableBtn(prefix) {
+  const btn = document.getElementById(prefix + '-btn');
+  if (!btn) return;
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> ${BTN_LABELS[prefix] || '提交'}`;
+}
+
+function showError(prefix, msg) {
+  const el = document.getElementById(prefix + '-error');
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+  const prog = document.getElementById(prefix + '-progress');
+  if (prog) prog.classList.remove('show');
+}
+
+// ── Round 1 提交 ──────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // 行业输入防抖校验
+  ['r1-sector', 'ru-sector'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let timer;
+    el.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => validateSector(el.value.trim(), id === 'r1-sector' ? 'r1-validate-msg' : null), 700);
+    });
+  });
+
+  // 素材字数统计
+  const ruContent = document.getElementById('ru-content');
+  if (ruContent) {
+    ruContent.addEventListener('input', () => {
+      document.getElementById('ru-char-count').textContent = ruContent.value.length.toLocaleString() + ' 字符';
+    });
+  }
+
+  loadHistory('round1');
+  loadReportsList();
+});
+
+async function loadReportsList() {
+  const container = document.getElementById('reports-list');
+  if (!container) return;
+  try {
+    const res = await fetch('/api/reports');
+    const files = await res.json();
+    if (!files.length) {
+      container.innerHTML = '<p style="font-size:11px;color:#4a5568;">暂无报告文件</p>';
+      return;
+    }
+    container.innerHTML = files.map(f => `
+      <div class="history-item" onclick="downloadReport('${f.filename}')">
+        <span style="font-family:monospace;font-size:12px;">${f.filename}</span>
+        <span style="display:flex;align-items:center;gap:8px;">
+          <span style="color:#4a5568;font-size:11px;">${f.modified} · ${(f.size/1024).toFixed(0)}KB</span>
+          <span class="badge">↓ 下载</span>
+        </span>
+      </div>`).join('');
+  } catch(e) { console.error('loadReportsList:', e); }
+}
+
+async function validateSector(sector, msgId) {
+  if (msgId) {
+    const msgEl = document.getElementById(msgId);
+    if (!sector || sector.length < 2) { msgEl.textContent = ''; return; }
+    msgEl.textContent = '⏳ 校验中...';
+    msgEl.style.color = '#718096';
+    try {
+      const res = await fetch('/api/validate-sector', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({sector})
+      });
+      const data = await res.json();
+      if (data.valid) {
+        msgEl.textContent = '✓ 有效的A股行业方向';
+        msgEl.style.color = '#68d391';
+      } else {
+        msgEl.textContent = '✗ ' + (data.message || '不是合法行业方向');
+        msgEl.style.color = '#fc8181';
+      }
+    } catch { msgEl.textContent = ''; }
+  }
+}
+
+async function submitRound1() {
+  const sector = document.getElementById('r1-sector').value.trim();
+  const errEl = document.getElementById('r1-error');
+  errEl.style.display = 'none';
+  if (!sector) { errEl.textContent = '请输入行业名称'; errEl.style.display = 'block'; return; }
+
+  document.getElementById('r1-btn').disabled = true;
+  document.getElementById('r1-btn').textContent = '校验中...';
+  try {
+    const vRes = await fetch('/api/validate-sector', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({sector})
+    });
+    const vData = await vRes.json();
+    if (!vData.valid) {
+      errEl.textContent = vData.message || '行业名称无效';
+      errEl.style.display = 'block';
+      enableBtn('r1'); return;
+    }
+  } catch {}
+
+  disableBtn('r1');
+  document.getElementById('r1-progress').classList.add('show');
+  document.getElementById('r1-pbar').classList.add('indeterminate');
+  document.getElementById('r1-ptext').textContent = '正在提交...';
+  document.getElementById('r1-result').innerHTML = '';
+
+  try {
+    const res = await fetch('/api/round1', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({sector})
+    });
+    if (!res.ok) { const e = await res.json(); showError('r1', e.detail || '提交失败'); enableBtn('r1'); return; }
+    const {job_id} = await res.json();
+    startPolling(job_id, 'r1');
+  } catch(e) { showError('r1', '网络错误：' + e.message); enableBtn('r1'); }
+}
+
+// ── 素材上传 ──────────────────────────────────────────
+function handleDragOver(e) { e.preventDefault(); document.getElementById('ru-drop').classList.add('drag-over'); }
+function handleDragLeave() { document.getElementById('ru-drop').classList.remove('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('ru-drop').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) readFile(file);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) readFile(file);
+}
+
+function readFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('ru-content').value = e.target.result;
+    document.getElementById('ru-file-name').textContent = '✓ ' + file.name;
+    document.getElementById('ru-char-count').textContent = e.target.result.length.toLocaleString() + ' 字符';
+  };
+  // PDF 只能以文本读（如果是纯文字PDF）
+  reader.readAsText(file, 'UTF-8');
+}
+
+async function submitUpload() {
+  const sector = document.getElementById('ru-sector').value.trim();
+  const content = document.getElementById('ru-content').value.trim();
+  const errEl = document.getElementById('ru-error');
+  errEl.style.display = 'none';
+
+  if (!sector) { errEl.textContent = '请填写行业方向'; errEl.style.display = 'block'; return; }
+  if (!content || content.length < 50) {
+    errEl.textContent = '素材内容过短，请粘贴或上传原始素材（至少50字）';
+    errEl.style.display = 'block'; return;
+  }
+
+  disableBtn('ru');
+  document.getElementById('ru-progress').classList.add('show');
+  document.getElementById('ru-pbar').classList.add('indeterminate');
+  document.getElementById('ru-ptext').textContent = '正在提交...';
+  document.getElementById('ru-result').innerHTML = '';
+
+  try {
+    const res = await fetch('/api/analyze-upload', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({sector, content})
+    });
+    if (!res.ok) { const e = await res.json(); showError('ru', e.detail || '提交失败'); enableBtn('ru'); return; }
+    const {job_id} = await res.json();
+    startPolling(job_id, 'ru');
+  } catch(e) { showError('ru', '网络错误：' + e.message); enableBtn('ru'); }
+}
+
+// ── Round 2 提交 ──────────────────────────────────────
+async function submitRound2() {
+  const raw = document.getElementById('r2-stocks').value.trim();
+  const stocks = raw.split(/[\s,，\n]+/).filter(s => /^\d{6}$/.test(s));
+  const errEl = document.getElementById('r2-error');
+  errEl.style.display = 'none';
+  if (!stocks.length) { errEl.textContent = '请输入有效的6位股票代码'; errEl.style.display = 'block'; return; }
+  if (stocks.length > 5) { errEl.textContent = '最多5只股票'; errEl.style.display = 'block'; return; }
+
+  disableBtn('r2');
+  document.getElementById('r2-progress').classList.add('show');
+  document.getElementById('r2-pbar').classList.add('indeterminate');
+  document.getElementById('r2-ptext').textContent = '正在提交...';
+  document.getElementById('r2-result').innerHTML = '';
+
+  try {
+    const res = await fetch('/api/round2', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({stocks})
+    });
+    if (!res.ok) { const e = await res.json(); showError('r2', e.detail || '提交失败'); enableBtn('r2'); return; }
+    const {job_id} = await res.json();
+    startPolling(job_id, 'r2');
+  } catch(e) { showError('r2', '网络错误：' + e.message); enableBtn('r2'); }
+}
+
+// ── 下载 Markdown ─────────────────────────────────────
+const resultStore = {};  // jobId → {content, filename}
+
+function downloadMd(jobId) {
+  const entry = resultStore[jobId];
+  if (!entry) return;
+  const blob = new Blob([entry.content], {type: 'text/markdown;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = entry.filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function downloadReport(filename) {
+  window.location.href = `/api/reports/${encodeURIComponent(filename)}`;
+}
+
+// ── 结果渲染 ──────────────────────────────────────────
+function renderResult(prefix, job) {
+  const el = document.getElementById(prefix + '-result');
+  if (!el) return;
+  const ts = new Date().toISOString().slice(0,10);
+
+  if (prefix === 'r2') {
+    const fname = `quant_${ts}.md`;
+    resultStore[job.id] = {content: job.result, filename: fname};
+    el.innerHTML = renderRound2Cards(job.result);
+    el.insertAdjacentHTML('beforeend', `
+      <div style="margin-top:12px;text-align:right;">
+        <button class="btn btn-secondary" onclick="downloadMd('${job.id}')">↓ 下载 Markdown</button>
+      </div>`);
+  } else {
+    const label = prefix === 'r1' ? 'report' : 'upload_analysis';
+    const fname = `${label}_${ts}.md`;
+    resultStore[job.id] = {content: job.result, filename: fname};
+    el.innerHTML = `<div class="report-md">${marked.parse(job.result || '')}</div>`;
+    el.insertAdjacentHTML('beforeend', `
+      <div style="margin-top:12px;text-align:right;">
+        <button class="btn btn-secondary" onclick="downloadMd('${job.id}')">↓ 下载 Markdown</button>
+      </div>`);
+    if (prefix === 'r1') {
+      el.insertAdjacentHTML('afterbegin', `
+        <div class="next-step-hint">
+          <p>研报已生成 — 找到「推荐标的」的股票代码，去 <strong>个股量化</strong> 做量化信号验证</p>
+          <button class="btn-ghost" onclick="switchTab('round2')">去个股量化 →</button>
+        </div>`);
+    }
+    if (prefix === 'ru') {
+      el.insertAdjacentHTML('afterbegin', `
+        <div class="next-step-hint">
+          <p>方法论对齐完成 — 报告已按五节框架结构化，可继续做个股量化验证</p>
+          <button class="btn-ghost" onclick="switchTab('round2')">去个股量化 →</button>
+        </div>`);
+    }
+  }
+}
+
+// ── Round 2 结果解析 ──────────────────────────────────
+function parseScore(text, keyword) {
+  const pats = [
+    new RegExp(keyword + '[：:评分\\s]*([0-9.]+)\\s*/\\s*10', 'i'),
+    new RegExp(keyword + '[：:评分\\s]+([0-9.]+)\\s*分', 'i'),
+    new RegExp(keyword + '[^\\n]{0,20}([0-9.]+)\\s*/\\s*10', 'i'),
+  ];
+  for (const p of pats) { const m = text.match(p); if (m) return parseFloat(m[1]); }
+  return null;
+}
+
+function scoreClass(s) {
+  if (s === null) return 'score-neutral';
+  return s >= 7 ? 'score-high' : s >= 4 ? 'score-mid' : 'score-low';
+}
+
+function extractListItems(text, heading, max = 3) {
+  const r = new RegExp(heading + '[^\\n]*\\n([\\s\\S]*?)(?=\\n#{1,4}\\s|\\n\\*\\*[^*]|$)', 'i');
+  const m = text.match(r);
+  if (!m) return [];
+  const items = m[1].match(/[-•*]\s*(.+?)(?=\n|$)/g) || [];
+  return items.slice(0, max).map(s => s.replace(/^[-•*]\s*/, '').trim());
+}
+
+function extractAction(text) {
+  for (const p of [/操作建议[：:]\s*(.+?)(?=\n|$)/i, /建议[：:]\s*(.+?)(?=\n|$)/i]) {
+    const m = text.match(p);
+    if (m) return m[1].trim().slice(0, 80);
+  }
+  return '';
+}
+
+function renderRound2Cards(md) {
+  if (!md) return '<p style="color:#718096">无结果</p>';
+  const sections = md.split(/\n(?=#{1,2}\s+[^\n#]+（\d{6}）)/);
+  const cards = sections.map(sec => {
+    const nm = sec.match(/#{1,2}\s+(.+?)（(\d{6})）/);
+    if (!nm) return '';
+    const [,name, code] = nm;
+    const tech = parseScore(sec, '技术[面]?');
+    const sent = parseScore(sec, '情绪[面]?');
+    const fund = parseScore(sec, '资金[面]?');
+    const bulls = extractListItems(sec, '看涨|多头|利多');
+    const bears = extractListItems(sec, '看跌|空头|利空');
+    const act = extractAction(sec);
+    return `
+    <div class="stock-card">
+      <div class="stock-card-header">
+        <span class="stock-name">${name.trim()}</span>
+        <span class="stock-code">${code}</span>
+      </div>
+      <div class="score-grid">
+        <div class="score-item"><div class="label">技术面</div><span class="score-badge ${scoreClass(tech)}">${tech !== null ? tech+'/10' : 'N/A'}</span></div>
+        <div class="score-item"><div class="label">情绪面</div><span class="score-badge ${scoreClass(sent)}">${sent !== null ? sent+'/10' : 'N/A'}</span></div>
+        <div class="score-item"><div class="label">资金面</div><span class="score-badge ${scoreClass(fund)}">${fund !== null ? fund+'/10' : 'N/A'}</span></div>
+      </div>
+      <div class="stock-card-body">
+        ${bulls.length || bears.length ? `<div class="bull-bear">
+          <div class="bull"><h4>看涨论点</h4><ul>${bulls.map(b=>`<li>${b}</li>`).join('')||'<li>（未提取）</li>'}</ul></div>
+          <div class="bear"><h4>看跌风险</h4><ul>${bears.map(b=>`<li>${b}</li>`).join('')||'<li>（未提取）</li>'}</ul></div>
+        </div>` : ''}
+        ${act ? `<div class="action-box">💡 ${act}</div>` : ''}
+        <details style="margin-top:10px;">
+          <summary style="font-size:11px;color:#718096;cursor:pointer;">查看完整分析 ▾</summary>
+          <div class="report-md" style="margin-top:10px;padding:14px;">${marked.parse(sec)}</div>
+        </details>
+      </div>
+    </div>`;
+  }).filter(Boolean);
+
+  if (!cards.length) return `<div class="report-md">${marked.parse(md)}</div>`;
+  return `
+    <div class="next-step-hint" style="margin-bottom:16px;">
+      <p>量化分析完成 — 结合行业研报的主观判断综合决策</p>
+      <button class="btn-ghost" onclick="switchTab('round1')">返回行业研报</button>
+    </div>
+    <div class="stock-cards">${cards.join('')}</div>`;
+}
+
+// ── 历史任务 ──────────────────────────────────────────
+async function loadHistory(type) {
+  try {
+    const res = await fetch('/api/jobs');
+    const jobs = await res.json();
+    const prefixMap = {round1: 'r1', upload: 'ru', round2: 'r2'};
+    const prefix = prefixMap[type] || type;
+    const filtered = jobs.filter(j => j.type === type);
+    const container = document.getElementById(prefix + '-history');
+    if (!container) return;
+
+    if (!filtered.length) {
+      container.innerHTML = '<p style="font-size:11px;color:#4a5568;">暂无历史任务</p>';
+      return;
+    }
+    container.innerHTML = filtered.map(j => {
+      const params = (() => { try { return JSON.parse(j.params || '{}'); } catch { return {}; } })();
+      const label = type === 'round2'
+        ? (params.stocks || []).join(', ')
+        : (params.sector || '未知行业');
+      const time = (j.created_at || '').slice(0, 16).replace('T', ' ');
+      return `<div class="history-item" onclick="loadJobResult('${j.id}', '${prefix}')">
+        <span><span class="status-dot ${j.status}"></span>${label}</span>
+        <span><span class="badge">${j.status}</span> <span style="color:#718096;font-size:11px;">${time}</span></span>
+      </div>`;
+    }).join('');
+  } catch(e) { console.error('loadHistory:', e); }
+}
+
+async function loadJobResult(jobId, prefix) {
+  const job = await (await fetch(`/api/job/${jobId}`)).json();
+  const progEl = document.getElementById(prefix + '-progress');
+  if (job.status === 'done') {
+    renderResult(prefix, job);
+    if (progEl) progEl.classList.remove('show');
+  } else if (job.status === 'running') {
+    startPolling(jobId, prefix);
+    if (progEl) progEl.classList.add('show');
+  }
+}
+</script>
+</body>
+</html>

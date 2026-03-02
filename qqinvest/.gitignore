@@ -1,0 +1,8 @@
+reports/
+素材/
+logs/
+jobs.db
+__pycache__/
+*.pyc
+.DS_Store
+ngrok_recovery_codes.txt
