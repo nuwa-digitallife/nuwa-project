@@ -13,6 +13,7 @@ import asyncio
 import json
 import logging
 import os
+import queue
 import sqlite3
 import subprocess
 import sys
@@ -23,7 +24,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -44,6 +45,9 @@ log = logging.getLogger("server")
 
 # ── FastAPI app ───────────────────────────────────────
 app = FastAPI(title="qqinvest AI 投研")
+
+# ── SSE 队列注册表（job_id → Queue）──────────────────
+sse_queues: dict[str, queue.Queue] = {}
 
 
 # ── SQLite 初始化 ─────────────────────────────────────
@@ -274,58 +278,52 @@ def run_upload_job(job_id: str, sector: str, mat_path: str):
 
 
 def run_deep_analysis_job(job_id: str, ticker: str, date: str):
-    """后台线程：执行 TradingAgents 7-Agent 深度个股分析。"""
+    """后台线程：in-process 调用 run_deep_analysis，通过 on_step 回调推 SSE 事件。"""
+    q = sse_queues.get(job_id)
+
+    def on_step(step_name: str, status: str, preview: str = ""):
+        """将步骤事件推入 SSE 队列，同时更新 DB 进度。"""
+        event = {"step": step_name, "status": status, "preview": preview[:120]}
+        if q is not None:
+            q.put(event)
+        if status == "started":
+            db_update_job(job_id, progress=f"▶ {step_name}...")
+        elif status == "completed":
+            db_update_job(job_id, progress=f"✓ {step_name}")
+
     try:
-        db_update_job(job_id, status="running", progress="正在获取行情/新闻/基本面数据...")
-
-        demo_script = TRADING_AGENTS_DIR / "run_demo_cli.py"
-        if not demo_script.exists():
-            db_update_job(job_id, status="failed", error=f"脚本未找到：{demo_script}")
-            return
-
-        env = os.environ.copy()
-        env.pop("CLAUDECODE", None)
-
-        cmd = [sys.executable, str(demo_script), ticker, date]
+        db_update_job(job_id, status="running", progress="正在初始化分析环境...")
         log.info(f"[{job_id[:8]}] 启动深度分析: ticker={ticker}, date={date}")
 
-        proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            cwd=str(TRADING_AGENTS_DIR),
-            env=env,
+        # 动态导入（避免循环导入，确保 CLAUDECODE 已从 env 清除）
+        import os as _os
+        _os.environ.pop("CLAUDECODE", None)
+
+        import run_demo_cli
+        result = run_demo_cli.run_deep_analysis(ticker, date, on_step=on_step)
+
+        # 存储结果：JSON 包含 full_report + summary
+        result_payload = json.dumps(
+            {"full_report": result["full_report"], "summary": result.get("summary", {})},
+            ensure_ascii=False,
         )
 
-        for line in proc.stdout:
-            line = line.rstrip()
-            if line.strip():
-                db_update_job(job_id, progress=line[-120:])
-
-        proc.wait()
-
-        if proc.returncode != 0:
-            db_update_job(job_id, status="failed", error=f"深度分析失败（退出码 {proc.returncode}）")
-            return
-
-        report_path = TRADING_AGENTS_DIR / "results_cli" / ticker / date / "full_report.md"
-        if not report_path.exists():
-            db_update_job(job_id, status="failed", error="报告文件未生成")
-            return
-
-        result_md = report_path.read_text(encoding="utf-8")
-
-        # 同时拷贝到 reports/ 以便统一下载
+        # 拷贝到 reports/ 以便统一下载
         REPORTS_DIR.mkdir(exist_ok=True)
-        (REPORTS_DIR / f"deep_{ticker}_{date}.md").write_text(result_md, encoding="utf-8")
+        (REPORTS_DIR / f"deep_{ticker}_{date}.md").write_text(result["full_report"], encoding="utf-8")
 
-        db_update_job(job_id, status="done", progress="深度分析完成（7-Agent）", result=result_md)
-        log.info(f"[{job_id[:8]}] 深度分析完成，报告 {len(result_md)} 字符")
+        db_update_job(job_id, status="done", progress="深度分析完成（8-Agent）", result=result_payload)
+        log.info(f"[{job_id[:8]}] 深度分析完成，报告 {len(result['full_report'])} 字符")
 
     except Exception as e:
         log.error(f"[{job_id[:8]}] 深度分析异常：{e}")
         db_update_job(job_id, status="failed", error=str(e))
+        if q is not None:
+            q.put({"step": "错误", "status": "failed", "error": str(e)[:200]})
+    finally:
+        # 放 None 哨兵，通知 SSE 流结束
+        if q is not None:
+            q.put(None)
 
 
 # ── API 路由 ──────────────────────────────────────────
@@ -449,6 +447,8 @@ async def start_deep_analysis(req: DeepAnalysisRequest):
 
     job_id = str(uuid.uuid4())
     db_create_job(job_id, "deep", {"ticker": ticker, "date": date})
+    # 注册 SSE 队列（必须在线程启动前）
+    sse_queues[job_id] = queue.Queue()
     t = threading.Thread(target=run_deep_analysis_job, args=(job_id, ticker, date), daemon=True)
     t.start()
     log.info(f"深度分析任务已创建：{job_id[:8]}，ticker={ticker}，date={date}")
@@ -483,6 +483,56 @@ async def list_jobs():
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+# ── SSE：深度分析实时步骤推送 ────────────────────────
+
+@app.get("/api/deep-sse/{job_id}")
+async def deep_sse(job_id: str):
+    """SSE 端点：实时推送深度分析步骤进度。
+
+    客户端用 EventSource 连接；每个步骤开始/完成时推一条事件。
+    结束时推 {"done": true}。
+    若任务已完成，立即推 done 事件。
+    """
+    job = db_get_job(job_id)
+    if not job:
+        raise HTTPException(404, "任务不存在")
+
+    # 如果任务已结束，立即返回 done
+    if job["status"] in ("done", "failed"):
+        async def immediate_done():
+            payload = json.dumps({"done": True, "status": job["status"]}, ensure_ascii=False)
+            yield f"data: {payload}\n\n"
+        return StreamingResponse(
+            immediate_done(),
+            media_type="text/event-stream",
+            headers={"X-Accel-Buffering": "no", "Cache-Control": "no-cache"},
+        )
+
+    q = sse_queues.get(job_id)
+    if q is None:
+        raise HTTPException(404, "SSE 队列不存在，任务可能已完成或未启动")
+
+    async def event_stream():
+        while True:
+            try:
+                event = q.get_nowait()
+            except queue.Empty:
+                await asyncio.sleep(0.2)
+                continue
+
+            if event is None:  # 哨兵：任务结束
+                yield f"data: {json.dumps({'done': True}, ensure_ascii=False)}\n\n"
+                break
+
+            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"X-Accel-Buffering": "no", "Cache-Control": "no-cache"},
+    )
 
 
 # ── 报告文件下载 ──────────────────────────────────────

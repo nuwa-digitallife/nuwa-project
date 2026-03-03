@@ -248,6 +248,84 @@
     .report-md blockquote { border-left: 3px solid #4a5568; padding-left: 10px; color: #718096; margin: 7px 0; }
     .report-md strong { color: #f7fafc; }
 
+    /* ── 深度分析步骤列表 ── */
+    .steps-list {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 12px;
+      color: #718096;
+      padding: 4px 0;
+      transition: color 0.2s;
+    }
+    .step-item.running { color: #e2e8f0; }
+    .step-item.completed { color: #68d391; }
+    .step-item.failed { color: #fc8181; }
+    .step-icon {
+      width: 16px;
+      text-align: center;
+      flex-shrink: 0;
+      font-size: 13px;
+    }
+    .step-spin {
+      display: inline-block;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+    /* ── 深度分析摘要卡片 ── */
+    .summary-card {
+      background: linear-gradient(135deg, #0d1929 0%, #16213e 100%);
+      border: 1px solid #2b6cb0;
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin-bottom: 18px;
+    }
+    .summary-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .summary-ticker-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f7fafc;
+    }
+    .summary-signal-badge {
+      padding: 4px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .signal-buy  { background: #276749; color: #68d391; }
+    .signal-hold { background: #2d3748; color: #a0aec0; }
+    .signal-sell { background: #742a2a; color: #fc8181; }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .summary-metric { text-align: center; }
+    .summary-metric .sm-label { font-size: 10px; color: #718096; margin-bottom: 4px; }
+    .summary-metric .sm-value { font-size: 14px; font-weight: 600; color: #e2e8f0; }
+    .summary-oneliner {
+      background: #0f1117;
+      border-left: 3px solid #3182ce;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: #cbd5e0;
+      border-radius: 0 4px 4px 0;
+    }
+
     /* ── 历史任务 ── */
     .history-section { margin-top: 28px; }
     .history-section h3 { font-size: 12px; color: #718096; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -451,13 +529,13 @@
 <!-- ══════════════════ Tab: 深度个股分析 (TradingAgents 7-Agent) ══════════════════ -->
 <div id="tab-deep" class="tab-panel">
   <div class="method-box">
-    <div class="mb-title">🔬 TradingAgents 7-Agent 深度分析</div>
+    <div class="mb-title">🔬 TradingAgents 8-Agent 深度分析</div>
     <ol>
-      <li><strong>三位分析师（Sonnet）</strong>：技术面 / 新闻舆情 / 基本面 并行分析</li>
+      <li><strong>四位分析师（Sonnet）</strong>：技术面 / 新闻舆情 / 基本面 / 社交情绪（资金流+人气+评论）</li>
       <li><strong>多空辩论（Opus）</strong>：多方研究员 vs 空方研究员，构建论点</li>
       <li><strong>研究主任裁定（Opus）</strong>：综合多空，给出目标价与置信度</li>
       <li><strong>风险管理（Opus）</strong>：仓位建议 + 止损机制</li>
-      <li><strong>最终交易员建议（Opus）</strong>：具体操作方案 + 汇总表格</li>
+      <li><strong>最终交易员建议（Opus）</strong>：具体操作方案 + 结构化摘要卡片</li>
     </ol>
   </div>
 
@@ -481,16 +559,29 @@
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         开始深度分析
       </button>
-      <span class="hint">预计 15-20 分钟（3×Sonnet + 4×Opus）</span>
+      <span class="hint">预计 15-25 分钟（4×Sonnet + 4×Opus + 摘要提取）</span>
     </div>
   </div>
 
   <div id="da-progress" class="progress-area">
     <p class="progress-label">分析进度</p>
     <div class="progress-bar-wrap"><div class="progress-bar indeterminate" id="da-pbar"></div></div>
-    <p class="progress-text" id="da-ptext">正在初始化...</p>
+    <div class="steps-list" id="da-steps-list">
+      <div class="step-item" id="dastep-获取数据"><span class="step-icon">○</span>获取数据（行情 / 新闻 / 基本面 / 社交）</div>
+      <div class="step-item" id="dastep-市场分析师"><span class="step-icon">○</span>市场分析师（Sonnet）</div>
+      <div class="step-item" id="dastep-新闻分析师"><span class="step-icon">○</span>新闻分析师（Sonnet）</div>
+      <div class="step-item" id="dastep-基本面分析师"><span class="step-icon">○</span>基本面分析师（Sonnet）</div>
+      <div class="step-item" id="dastep-社交情绪分析师"><span class="step-icon">○</span>社交情绪分析师（Sonnet）</div>
+      <div class="step-item" id="dastep-多方研究员"><span class="step-icon">○</span>多方研究员（Opus）</div>
+      <div class="step-item" id="dastep-空方研究员"><span class="step-icon">○</span>空方研究员（Opus）</div>
+      <div class="step-item" id="dastep-研究主任裁定"><span class="step-icon">○</span>研究主任裁定（Opus）</div>
+      <div class="step-item" id="dastep-风险评估"><span class="step-icon">○</span>风险评估（Opus）</div>
+      <div class="step-item" id="dastep-最终操作建议"><span class="step-icon">○</span>最终操作建议（Opus）</div>
+      <div class="step-item" id="dastep-提取结构化摘要"><span class="step-icon">○</span>提取结构化摘要</div>
+    </div>
   </div>
 
+  <div id="da-summary" class="summary-card" style="display:none;"></div>
   <div id="da-result" class="result-area"></div>
 
   <div class="history-section">
@@ -759,7 +850,71 @@ async function submitRound2() {
   } catch(e) { showError('r2', '网络错误：' + e.message); enableBtn('r2'); }
 }
 
-// ── 深度分析提交 ──────────────────────────────────────
+// ── 深度分析步骤 UI 更新 ──────────────────────────────
+function updateStep(stepName, status) {
+  const el = document.getElementById('dastep-' + stepName);
+  if (!el) return;
+  el.className = 'step-item ' + status;
+  const iconEl = el.querySelector('.step-icon');
+  if (!iconEl) return;
+  if (status === 'running') {
+    iconEl.innerHTML = '<span class="step-spin">⟳</span>';
+  } else if (status === 'completed') {
+    iconEl.textContent = '✓';
+  } else if (status === 'failed') {
+    iconEl.textContent = '✗';
+  } else {
+    iconEl.textContent = '○';
+  }
+}
+
+function resetSteps() {
+  document.querySelectorAll('.step-item').forEach(el => {
+    el.className = 'step-item';
+    const iconEl = el.querySelector('.step-icon');
+    if (iconEl) iconEl.textContent = '○';
+  });
+}
+
+// ── 深度分析摘要卡片渲染 ──────────────────────────────
+function renderSummaryCard(summary, ticker, company) {
+  if (!summary || !summary.signal) return '';
+
+  const signalMap = {'买入': 'signal-buy', '持有': 'signal-hold', '卖出': 'signal-sell'};
+  const signalClass = signalMap[summary.signal] || 'signal-hold';
+
+  const fmt = (v, suffix='') => (v !== null && v !== undefined && v !== '') ? `${v}${suffix}` : '—';
+  const pct = v => (v !== null && v !== undefined && v !== '') ? `${(v*100).toFixed(0)}%` : '—';
+
+  return `
+  <div class="summary-header">
+    <span class="summary-ticker-name">${company || ticker} (${ticker})</span>
+    <span class="summary-signal-badge ${signalClass}">${summary.signal}</span>
+  </div>
+  <div class="summary-grid">
+    <div class="summary-metric">
+      <div class="sm-label">目标价区间</div>
+      <div class="sm-value">${fmt(summary.target_low)}–${fmt(summary.target_high, ' 元')}</div>
+    </div>
+    <div class="summary-metric">
+      <div class="sm-label">止损价</div>
+      <div class="sm-value">${fmt(summary.stop_loss, ' 元')}</div>
+    </div>
+    <div class="summary-metric">
+      <div class="sm-label">置信度</div>
+      <div class="sm-value">${pct(summary.confidence)}</div>
+    </div>
+    <div class="summary-metric">
+      <div class="sm-label">风险评分</div>
+      <div class="sm-value">${pct(summary.risk_score)}</div>
+    </div>
+  </div>
+  ${summary.one_line ? `<div class="summary-oneliner">💡 ${summary.one_line}</div>` : ''}`;
+}
+
+// ── 深度分析提交（EventSource 版）────────────────────
+let deepEventSource = null;
+
 async function submitDeepAnalysis() {
   const ticker = document.getElementById('da-ticker').value.trim();
   const date = document.getElementById('da-date').value.trim();
@@ -775,10 +930,14 @@ async function submitDeepAnalysis() {
     errEl.style.display = 'block'; return;
   }
 
+  // 关闭旧的 SSE 连接（如果有）
+  if (deepEventSource) { deepEventSource.close(); deepEventSource = null; }
+
   disableBtn('da');
+  resetSteps();
   document.getElementById('da-progress').classList.add('show');
   document.getElementById('da-pbar').classList.add('indeterminate');
-  document.getElementById('da-ptext').textContent = '正在提交...';
+  document.getElementById('da-summary').style.display = 'none';
   document.getElementById('da-result').innerHTML = '';
 
   try {
@@ -788,7 +947,48 @@ async function submitDeepAnalysis() {
     });
     if (!res.ok) { const e = await res.json(); showError('da', e.detail || '提交失败'); enableBtn('da'); return; }
     const {job_id} = await res.json();
-    startPolling(job_id, 'da');
+
+    // 连接 SSE
+    deepEventSource = new EventSource(`/api/deep-sse/${job_id}`);
+
+    deepEventSource.onmessage = async (e) => {
+      let data;
+      try { data = JSON.parse(e.data); } catch { return; }
+
+      if (data.done) {
+        deepEventSource.close(); deepEventSource = null;
+        const pbar = document.getElementById('da-pbar');
+        if (pbar) { pbar.classList.remove('indeterminate'); pbar.style.width = '100%'; }
+        enableBtn('da');
+        // 拉取完整结果
+        const jobRes = await fetch(`/api/job/${job_id}`);
+        const job = await jobRes.json();
+        if (job.status === 'done') {
+          renderResult('da', job);
+          loadHistory('deep');
+        } else if (job.status === 'failed') {
+          showError('da', job.error || '任务失败');
+        }
+        return;
+      }
+
+      if (data.step && data.status) {
+        if (data.status === 'started') {
+          updateStep(data.step, 'running');
+        } else if (data.status === 'completed') {
+          updateStep(data.step, 'completed');
+        } else if (data.status === 'failed') {
+          updateStep(data.step, 'failed');
+        }
+      }
+    };
+
+    deepEventSource.onerror = () => {
+      // SSE 断开：fallback 到轮询
+      if (deepEventSource) { deepEventSource.close(); deepEventSource = null; }
+      startPolling(job_id, 'da');
+    };
+
   } catch(e) { showError('da', '网络错误：' + e.message); enableBtn('da'); }
 }
 
@@ -826,16 +1026,39 @@ function renderResult(prefix, job) {
       </div>`);
   } else if (prefix === 'da') {
     const params = (() => { try { return JSON.parse(job.params || '{}'); } catch { return {}; } })();
-    const fname = `deep_${params.ticker || 'stock'}_${params.date || ts}.md`;
-    resultStore[job.id] = {content: job.result, filename: fname};
-    el.innerHTML = `<div class="report-md">${marked.parse(job.result || '')}</div>`;
+    const ticker = params.ticker || 'stock';
+    const fname = `deep_${ticker}_${params.date || ts}.md`;
+
+    // 解析结果：新格式为 JSON {full_report, summary}，旧格式为纯 Markdown
+    let fullReport = job.result || '';
+    let summary = null;
+    let company = ticker;
+    try {
+      const parsed = JSON.parse(job.result);
+      fullReport = parsed.full_report || job.result;
+      summary = parsed.summary || null;
+      // 从报告标题提取公司名
+      const m = fullReport.match(/\|\s*(\S+)\（\d{6}\）/);
+      if (m) company = m[1];
+    } catch {}
+
+    resultStore[job.id] = {content: fullReport, filename: fname};
+
+    // 摘要卡片
+    const summaryEl = document.getElementById('da-summary');
+    if (summary && summary.signal && summaryEl) {
+      summaryEl.innerHTML = renderSummaryCard(summary, ticker, company);
+      summaryEl.style.display = 'block';
+    }
+
+    el.innerHTML = `<div class="report-md">${marked.parse(fullReport || '')}</div>`;
     el.insertAdjacentHTML('beforeend', `
       <div style="margin-top:12px;text-align:right;">
         <button class="btn btn-secondary" onclick="downloadMd('${job.id}')">↓ 下载 Markdown</button>
       </div>`);
     el.insertAdjacentHTML('afterbegin', `
       <div class="next-step-hint">
-        <p>深度分析完成 — 7 Agent 多空辩论报告已生成</p>
+        <p>深度分析完成 — 8 Agent 多空辩论报告已生成</p>
         <button class="btn-ghost" onclick="switchTab('round1')">返回行业研报</button>
       </div>`);
   } else {
