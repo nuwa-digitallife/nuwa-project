@@ -75,22 +75,49 @@ class ContextLoader:
             return path.read_text(encoding="utf-8")
         return ""
 
-    def load_series_articles_summary(self, series_name: str) -> str:
-        """读取系列已发文章的标题和开头，用于续恰。"""
-        if not series_name:
-            return "（独立篇，无系列对比）"
-        series_dir = self.wechat_dir / "公众号已发" / series_name
-        if not series_dir.exists():
-            return ""
+    def load_series_articles_summary(self, series_name: str,
+                                      persona_name: str = None) -> str:
+        """读取系列已发文章 + 同人设跨系列文章，用于续恰。"""
         result = []
-        for md_file in sorted(series_dir.glob("*.md")):
-            if md_file.name in ("lessons.md",) or md_file.name.endswith("-metrics.md"):
-                continue
-            content = md_file.read_text(encoding="utf-8")
-            lines = content.strip().split("\n")
-            preview = "\n".join(lines[:10])
-            result.append(f"### {md_file.name}\n{preview}\n")
-        return "\n".join(result) if result else "（暂无已发文章）"
+
+        # 1) 按系列查：公众号已发/{series_name}/
+        if series_name:
+            series_dir = self.wechat_dir / "公众号已发" / series_name
+            if series_dir.exists():
+                for md_file in sorted(series_dir.glob("*.md")):
+                    if md_file.name in ("lessons.md",) or md_file.name.endswith("-metrics.md"):
+                        continue
+                    content = md_file.read_text(encoding="utf-8")
+                    lines = content.strip().split("\n")
+                    preview = "\n".join(lines[:10])
+                    result.append(f"### [系列:{series_name}] {md_file.name}\n{preview}\n")
+
+        # 2) 按人设查：扫描所有已发目录，找 publish_guide 或文末署名匹配人设的文章
+        if persona_name:
+            published_dir = self.wechat_dir / "公众号已发"
+            seen_files = {r.split("] ")[-1].split("\n")[0] for r in result}  # 去重
+            if published_dir.exists():
+                for series_sub in sorted(published_dir.iterdir()):
+                    if not series_sub.is_dir():
+                        continue
+                    for md_file in sorted(series_sub.glob("*.md")):
+                        if md_file.name in seen_files:
+                            continue
+                        if md_file.name in ("lessons.md",) or md_file.name.endswith("-metrics.md"):
+                            continue
+                        content = md_file.read_text(encoding="utf-8")
+                        # 检查文章是否由该人设执笔（署名行或内容提及）
+                        if persona_name in content:
+                            lines = content.strip().split("\n")
+                            preview = "\n".join(lines[:10])
+                            result.append(
+                                f"### [同人设:{persona_name}, 系列:{series_sub.name}] "
+                                f"{md_file.name}\n{preview}\n")
+                            seen_files.add(md_file.name)
+
+        if not result:
+            return "（无已发文章可供续恰对比）"
+        return "\n".join(result)
 
     def load_materials(self, topic_dir: Path) -> str:
         """读取选题目录下的所有素材。"""
@@ -349,7 +376,7 @@ class ContextLoader:
             "ARTICLE_FACTCHECKED": article_factchecked,
             "PERSONA": self.load_persona(persona_name),
             "EXPERIENCE": self.load_experience(),
-            "SERIES_CONTEXT": self.load_series_articles_summary(series_name),
+            "SERIES_CONTEXT": self.load_series_articles_summary(series_name, persona_name),
             "COMPETITOR_ARTICLES": self.load_competitor_articles(topic_dir),
             "REVIEW_CHECKLIST": self.load_review_checklist(),
         }

@@ -1,0 +1,9 @@
+# Anthropic Dials Back AI Safety Commitments - WSJ
+
+- Source: WSJ
+- Date: Wed, 25 Feb 2026 00:59:00 GMT
+- Link: https://news.google.com/rss/articles/CBMiiwNBVV95cUxNaTJWeHZqNWJGTWhBU1FvdFdrbkpkRTZXQ1hTTTdxdlYyVnNDTnNiUGZKS3dIWV9vemRpMldMREdaQTluWlUwem1FTy1vM0lDY3lZUTZkQk83Rm43OUJYdjNFOEdwNnFZdGkwc3RYNEFIc3Q4bXU4cGtfcVFUSlMxU3FYZHRzVExVVG4tNHdQMXN1THdtWUtnZUlUYU1uN3RIN1NVVm1ZUVFzUXdSYk5CVl83WFpEaUJEdGtTb2ltd2JsM2E2bWlfT2hXZExXaHRlMzBfZjNqU3R0Vjk0a1JPR3VQS3NQN2s1REpCV2NsQmxoWXpfYmFYZVlLTllqa0pKcW5iTUZkd2s1ZkluWms2Y1d2Wmg4S2lDU3dfT1dwaWtMcjl0UDdWMUhoNWZSM281ZkozV2YtNlg4UmVabzRIT3V3Q2txZHI1b2hpenFMZnJGRFZvSXNYWEw4c3AxaWlfSDA1cG95VVdqeDRpSVdBZS1ybExlSEo0Q1hGbnVUY2FoMGlKcG5yMlpuRQ?oc=5
+
+## Description
+
+Anthropic Dials Back AI Safety Commitments&nbsp;&nbsp;WSJ

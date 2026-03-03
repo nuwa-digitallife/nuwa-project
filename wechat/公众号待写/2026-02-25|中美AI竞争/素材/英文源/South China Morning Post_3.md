@@ -1,0 +1,9 @@
+# China takes confident strides to develop more AI innovation in 2026 - South China Morning Post
+
+- Source: South China Morning Post
+- Date: Sat, 03 Jan 2026 08:00:00 GMT
+- Link: https://news.google.com/rss/articles/CBMivgFBVV95cUxPMUVHcXdmcWtCSlFWVGpIWTBlSTlNZzZwbl9FU09kSXpvc242b3VBLS1kdDM1OTFqRjNkTDU0RFRkV0ItU0E4N3VVX05KbVk5ZDEtdHczU0dCLXRUaEFoeGlLbHk3VlNHTTV2Z28zZFdjUmlwMmJYUXg3eDJxejdORi1NbnFlcXNHanAxdW91cllkWHZWN3UwRkpiVlBfNmZNQXhfTWZFV2lKLWZsX3RFMVVkLUw2NEI5UjFaWHNn0gG-AUFVX3lxTE5HRU12dEhnSTg0YWpGcHVSMVk3dmRXMmk4VkJKNEg2eTF0Z0RSajZXdTB4V0I5MzJQT05Oa0tlR3EyVHlDcDVrOWgyV2w3eFpLM0hJaDI2N2g4ckhtQW5NR2hkSFlXY3hsY2FHckRpRVhTQ1pvUFB2NjJWNzloR0dad1lwd0UtbThrakJKRURJMUpTSXR6VXk4NUhVWThDa1k1ZVFGaWZfVVEwODdsQUVweUdZbGo0OFR2LWZ0WFE?oc=5
+
+## Description
+
+China takes confident strides to develop more AI innovation in 2026&nbsp;&nbsp;South China Morning Post

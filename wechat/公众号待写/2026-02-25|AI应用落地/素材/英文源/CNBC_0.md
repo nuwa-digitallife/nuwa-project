@@ -1,0 +1,9 @@
+# Cursor announces major update to AI agents as coding tool battle heats up - CNBC
+
+- Source: CNBC
+- Date: Tue, 24 Feb 2026 18:54:29 GMT
+- Link: https://news.google.com/rss/articles/CBMiowFBVV95cUxOZm9kcGlhVVhqb2JMSVY3LU1ZUGxaaklSV3A2Y2toM3dzWHRzclJhN0c0ZnlJSlota0JBa0dYb0NYUDBfOFRvNTNyWWd1RWZCVDBhREREcjBUS08xZjVHRkx2R0NZcndzcjhTNjc0dWVVUGJFQVJsdUhLVmgxXzUzRzNuNmFCNjFhb1R4aUNEOUlIamZpM0JPTEwxWFdaclQ3dkJr0gGoAUFVX3lxTFBDbldqcVE4Y0Vqb290VDlINVlxWnRkbTRUSnBHWl9aNGJFNXlCT2plX0dXQ0xhaHZDQXVBYkdsZC0xeWZackluTHlhVXlpSjNBMHhvbE1VZlFBUnBGdnZibXUwbnJ6SW1GSzc0d0daSWpGeUtUM1RLZzlnTjJ5NXJ6VzNpWUVOLV9jTzhUX3pYbl9lOEVpTlJZT3JfTXlyNW5fX0tYN3hxZg?oc=5
+
+## Description
+
+Cursor announces major update to AI agents as coding tool battle heats up&nbsp;&nbsp;CNBC
