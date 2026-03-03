@@ -17,3 +17,25 @@ wechat/tools/*
 !wechat/tools/PLAN_weekend_sprint.md
 wechat/tools/write_engine/__pycache__/
 wechat/tools/publish/__pycache__/
+
+# Python 通用
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# TradingAgents-CN 运行时文件
+TradingAgents-CN/logs/*.log
+TradingAgents-CN/results_cli/
+TradingAgents-CN/frontend/node_modules/
+TradingAgents-CN/frontend/dist/
+TradingAgents-CN/backend/
+TradingAgents-CN/.env*
+TradingAgents-CN/data/*.db
+
+# qqinvest 运行时文件
+qqinvest/__pycache__/
+qqinvest/logs/*.log
+qqinvest/jobs.db
