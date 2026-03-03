@@ -22,12 +22,12 @@ brew install python@3.13
 ## 第二步：安装 Python 依赖
 
 ```bash
-pip3.13 install fastapi uvicorn akshare pandas-ta baostock pandas --break-system-packages
+pip3.13 install fastapi uvicorn akshare pandas-ta baostock pandas python-dotenv --break-system-packages
 ```
 
 验证：
 ```bash
-python3.13 -c "import fastapi, akshare, pandas_ta; print('依赖 OK')"
+python3.13 -c "import fastapi, akshare, pandas_ta, baostock; print('依赖 OK')"
 ```
 
 ---
@@ -60,7 +60,7 @@ claude -p "回复 OK" --output-format text
 
 ```bash
 cd "$(dirname "$0")"   # 进入 qqinvest/ 目录
-mkdir -p reports 素材 logs
+mkdir -p reports 素材 logs results_cli
 ```
 
 ---
@@ -99,17 +99,31 @@ env -u HTTP_PROXY -u HTTPS_PROXY ngrok http 8080
 Claude 执行完后，确认以下几点：
 
 - [ ] `http://localhost:8080` 能打开页面
-- [ ] 页面有三个 Tab：行业研报 / 素材上传分析 / 个股量化
+- [ ] 页面有**四个** Tab：行业研报 / 素材上传分析 / 个股量化 / 深度个股分析
 - [ ] 「行业研报」Tab 输入「特种机器人」，点生成研报，任务状态变为 running
+- [ ] 「深度个股分析」Tab 输入 `601608`，点开始，任务状态变为 running
 - [ ] `/api/reports` 接口返回 JSON 列表
+
+---
+
+## 功能说明
+
+| Tab | 功能 | 耗时 | 模型 |
+|-----|------|------|------|
+| 行业研报 | 网络采集行业素材 + 五节研报框架 | 30-60 分钟 | Sonnet（Pass1）+ Opus（Pass2）|
+| 素材上传分析 | 上传自有素材，方法论框架对齐 | 5-20 分钟 | Opus |
+| 个股量化 | 技术/情绪/资金三维评分，最多5只 | 3-15 分钟 | Sonnet |
+| 深度个股分析 | 7-Agent 多空辩论：技术+新闻+基本面→多空→裁定→风险→操作方案 | 15-20 分钟 | 3×Sonnet + 4×Opus |
+
+**推荐工作流**：行业研报 → 找推荐标的代码 → 个股量化快速筛选 → 深度分析精选标的
 
 ---
 
 ## 常见问题
 
-**`akshare` 数据拉不到**：A 股数据走国内直连，如果机器在境外或有代理，需设置：
+**`akshare` / `baostock` 数据拉不到**：A 股数据走国内直连，如果机器在境外或有代理，需设置：
 ```bash
-export NO_PROXY="eastmoney.com,push2his.eastmoney.com,xueqiu.com"
+export NO_PROXY="eastmoney.com,push2his.eastmoney.com,xueqiu.com,baostock.com"
 ```
 
 **`claude` 命令 not found**：确认 npm global bin 在 PATH 里：

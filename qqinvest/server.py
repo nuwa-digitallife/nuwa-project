@@ -32,7 +32,7 @@ ROOT = Path(__file__).resolve().parent
 STATIC_DIR = ROOT / "static"
 DB_PATH = ROOT / "jobs.db"
 REPORTS_DIR = ROOT / "reports"
-TRADING_AGENTS_DIR = ROOT.parent / "TradingAgents-CN"
+TRADING_AGENTS_DIR = ROOT  # run_demo_cli.py lives in the same dir
 
 # ── Logging ───────────────────────────────────────────
 logging.basicConfig(

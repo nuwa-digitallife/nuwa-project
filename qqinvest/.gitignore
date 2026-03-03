@@ -2,6 +2,7 @@ reports/
 素材/
 logs/
 jobs.db
+results_cli/
 __pycache__/
 *.pyc
 .DS_Store
