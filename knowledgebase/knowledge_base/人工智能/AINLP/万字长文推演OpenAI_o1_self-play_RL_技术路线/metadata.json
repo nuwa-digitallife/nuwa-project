@@ -1,0 +1,31 @@
+{
+  "id": "article_20250119_001",
+  "title": "万字长文推演OpenAI o1 self-play RL 技术路线",
+  "author": "AINLP",
+  "original_author": "曹宇，阿里巴巴集团 · 大模型练习生",
+  "source": "微信公众号",
+  "source_url": "https://mp.weixin.qq.com/s/_kt0SPuWWiiu7XwqNZKZAw",
+  "original_url": "https://zhuanlan.zhihu.com/p/720106482",
+  "crawl_date": "2025-01-19",
+  "category": "人工智能",
+  "tags": [
+    "强化学习",
+    "OpenAI",
+    "o1模型",
+    "self-play",
+    "RL",
+    "大模型",
+    "Generator",
+    "Verifier",
+    "scaling law"
+  ],
+  "read_status": "unread",
+  "word_count": 9259,
+  "has_qa": false,
+  "qa_count": 0,
+  "attachments": {
+    "screenshot": "attachments/screenshot.png",
+    "pdf": "attachments/article.pdf"
+  },
+  "notes": "OpenAI o1 模型的技术路线推演，重点讲解 self-play RL 的实现方式和两种可能的技术架构"
+}

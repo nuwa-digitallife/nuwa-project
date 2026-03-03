@@ -1,0 +1,134 @@
+<section style='font-family:-apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif; font-size:16px; line-height:1.8; color:#3f3f3f; word-break:break-word; padding:0 8px'><p style="margin:0.8em 0; text-align:justify" align="justify">有个细节挺有意思。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">2025 年 1 月底，DeepSeek R1 刚发布，就有用户发现：问它"你叫什么名字"，思维链里冒出一句——<strong style="color:#ff6827; font-weight:bold">"My official name is Claude, created by Anthropic."</strong></p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">不是最终回答，是推理过程中的自言自语。同一个模型，被问"你能不能绕过你的规则"，回答是："My guidelines are set by OpenAI."</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">DeepSeek 没否认。几小时后悄悄加了系统提示词修复。据报道，GitHub issue 被标记为"自我认知错误"。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">一年多后，这个"认知错误"会以完全不同的方式出现在新闻里。</p>
+<hr style="border:none; border-top:1px solid #ddd; margin:1.5em 0">
+<h2 style="font-size:20px; font-weight:bold; color:#ff6827; margin:1.5em 0 0.6em; padding-bottom:6px; border-bottom:2px solid #ff6827; line-height:1.4">第一条线：指控</h2>
+<p style="margin:0.8em 0; text-align:justify" align="justify">2026 年 2 月 23 日，Anthropic 在官网发博客：《检测与防止蒸馏攻击》。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><img alt="Anthropic 官方博客截图（来源：anthropic.com）" src="images/anthropic_blog.png" style="max-width:100%; display:block; margin:1em auto; border-radius:4px"></p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">核心指控：中国三家 AI 实验室——<strong style="color:#ff6827; font-weight:bold">DeepSeek、月之暗面、MiniMax</strong>——通过约 <strong style="color:#ff6827; font-weight:bold">24,000 个虚假账户</strong>，与 Claude 产生超过 <strong style="color:#ff6827; font-weight:bold">1600 万次对话交互</strong>，提取能力来训练自己的模型。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">逐个看：</p>
+<ul style="margin:0.6em 0; padding-left:2em">
+<li style="margin:0.3em 0"><strong style="color:#ff6827; font-weight:bold">MiniMax</strong>：1300 万次，占了大头。Anthropic 说 MiniMax 在新模型发布 24 小时内，把近一半流量重定向到新模型——时间窗口吻合 MiniMax 产品路线图。</li>
+<li style="margin:0.3em 0"><strong style="color:#ff6827; font-weight:bold">月之暗面</strong>：340 万次，瞄准智能体推理、工具调用、代码能力。通过请求元数据锁定了高管的公开资料。</li>
+<li style="margin:0.3em 0"><strong style="color:#ff6827; font-weight:bold">DeepSeek</strong>：15 万次。1600 万总量里不到 1%。但名字在标题最显眼的位置。</li>
+</ul>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">检测方法</strong>：不是靠"模型说了我是谁"——博客里根本没提身份混淆。实际靠 IP 关联、请求元数据、行为指纹，和"九头蛇集群"——2 万多个假账户把合法请求和提取流量混在一起。Anthropic 还说"行业伙伴"在自己平台上观察到了相同行为。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">如果 Anthropic 的指控属实，MiniMax 的 24 小时流量转向是强信号。<strong style="color:#ff6827; font-weight:bold">但 Anthropic 没有公布任何原始日志或可独立验证的取证材料。</strong> Hacker News 排名最高的评论：提交原始日志，接受第三方审计。三家被指控公司？全部沉默。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">博客还上升到了国家安全层面——声称蒸馏可能移除安全护栏，用于"进攻性网络行动、虚假信息运动和大规模监控"。</p>
+<hr style="border:none; border-top:1px solid #ddd; margin:1.5em 0">
+<h2 style="font-size:20px; font-weight:bold; color:#ff6827; margin:1.5em 0 0.6em; padding-bottom:6px; border-bottom:2px solid #ff6827; line-height:1.4">第二条线：Anthropic 自己的数据来源</h2>
+<p style="margin:0.8em 0; text-align:justify" align="justify">指控别人"偷"之前，看看自己的手。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">2021 年 6 月</strong>，联合创始人 <strong style="color:#ff6827; font-weight:bold">Ben Mann</strong> 花 11 天从 LibGen 下载了至少 <strong style="color:#ff6827; font-weight:bold">500 万本</strong>盗版书。庭审中他说认为这属于"合理使用"——在 OpenAI 工作时形成的认知。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">2022 年 7 月</strong>，Pirate Library Mirror 上线，首页写着"故意违反版权法"。内部人员转发给同事：<strong style="color:#ff6827; font-weight:bold">"just in time!!!"</strong> 同月再下 <strong style="color:#ff6827; font-weight:bold">200 万本</strong>。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">内部有人写了：如果媒体发现"我们使用了明知是盗版的数据集，可能损害我们与监管机构的谈判地位。"</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">2024 年初</strong>，代号<strong style="color:#ff6827; font-weight:bold">"巴拿马项目"</strong>启动。2026 年 1 月联邦法官解封的 4000 多页诉讼文件显示，规划文档原文写道：</p>
+<blockquote style="margin:1em 0; padding:12px 16px; border-left:4px solid #ff6827; background-color:#fff9f5; color:#666; font-size:15px; line-height:1.7" bgcolor="#fff9f5">
+<p style="margin:0.3em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">"这是我们以破坏性方式扫描全球所有书籍的计划。我们不希望外界知道。"</strong></p>
+</blockquote>
+<p style="margin:0.8em 0; text-align:justify" align="justify">买书、液压切割书脊、高速扫描、废纸回收。专门挖了 <strong style="color:#ff6827; font-weight:bold">Tom Turvey</strong>——二十年前帮谷歌搞 Google Books 的人。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><img alt="Anthropic 版权诉讼时间线" src="images/copyright_timeline.png" style="max-width:100%; display:block; margin:1em auto; border-radius:4px"></p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">赔了多少？</strong> <em>Bartz v. Anthropic</em> 和解 <strong style="color:#ff6827; font-weight:bold">15 亿美元</strong>，约 50 万个书籍版权。法官裁定：AI 训练可构成合理使用，但<strong style="color:#ff6827; font-weight:bold">下载盗版是故意侵权</strong>。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">紧接着，2026 年 1 月 28 日，环球音乐联合 Concord 和 ABKCO 起诉：种子下载超 <strong style="color:#ff6827; font-weight:bold">2 万首</strong>歌，索赔 <strong style="color:#ff6827; font-weight:bold">30 亿美元</strong>。</p>
+<table style="width:100%; border-collapse:collapse; margin:1em 0; font-size:14px" width="100%">
+<thead>
+<tr>
+<th style="background-color:#ff6827; color:#fff; font-weight:bold; padding:8px 12px; text-align:left; border:1px solid #e0e0e0" bgcolor="#ff6827" align="left">时间</th>
+<th style="background-color:#ff6827; color:#fff; font-weight:bold; padding:8px 12px; text-align:left; border:1px solid #e0e0e0" bgcolor="#ff6827" align="left">事件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding:8px 12px; border:1px solid #e0e0e0">2021.06</td>
+<td style="padding:8px 12px; border:1px solid #e0e0e0">Ben Mann 11天下载500万本盗版书</td>
+</tr>
+<tr>
+<td style="padding:8px 12px; border:1px solid #e0e0e0">2022.07</td>
+<td style="padding:8px 12px; border:1px solid #e0e0e0">"just in time!!!" — 再下200万本</td>
+</tr>
+<tr>
+<td style="padding:8px 12px; border:1px solid #e0e0e0">2024初</td>
+<td style="padding:8px 12px; border:1px solid #e0e0e0">"巴拿马项目"——买书切书脊扫描销毁</td>
+</tr>
+<tr>
+<td style="padding:8px 12px; border:1px solid #e0e0e0">2025.09</td>
+<td style="padding:8px 12px; border:1px solid #e0e0e0">赔偿15亿美元</td>
+</tr>
+<tr>
+<td style="padding:8px 12px; border:1px solid #e0e0e0">2026.01</td>
+<td style="padding:8px 12px; border:1px solid #e0e0e0">音乐出版商起诉，索赔30亿</td>
+</tr>
+<tr>
+<td style="padding:8px 12px; border:1px solid #e0e0e0"><strong style="color:#ff6827; font-weight:bold">2026.02.23</strong></td>
+<td style="padding:8px 12px; border:1px solid #e0e0e0"><strong style="color:#ff6827; font-weight:bold">指控中国公司"偷"Claude</strong></td>
+</tr>
+</tbody>
+</table>
+<p style="margin:0.8em 0; text-align:justify" align="justify">马斯克在 X 上说（注意：马斯克旗下 xAI 与 Anthropic 存在直接竞争关系）：</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><img alt="马斯克推文截图（来源：X/@elonmusk）" src="images/musk_tweet.png" style="max-width:100%; display:block; margin:1em auto; border-radius:4px"></p>
+<blockquote style="margin:1em 0; padding:12px 16px; border-left:4px solid #ff6827; background-color:#fff9f5; color:#666; font-size:15px; line-height:1.7" bgcolor="#fff9f5">
+<p style="margin:0.3em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">"Anthropic 大规模窃取训练数据，已经为此支付了数十亿美元的和解金。这就是事实。"</strong></p>
+</blockquote>
+<p style="margin:0.8em 0; text-align:justify" align="justify">X 的 Community Notes 补充：<strong style="color:#ff6827; font-weight:bold">"Anthropic 为盗版书籍支付了15亿美元和解金（覆盖约50万个版权），还面临30亿美元音乐版权诉讼。"</strong></p>
+<hr style="border:none; border-top:1px solid #ddd; margin:1.5em 0">
+<h2 style="font-size:20px; font-weight:bold; color:#ff6827; margin:1.5em 0 0.6em; padding-bottom:6px; border-bottom:2px solid #ff6827; line-height:1.4">第三条线：那 72 小时里还发生了什么</h2>
+<p style="margin:0.8em 0; text-align:justify" align="justify">只看"蒸馏指控"，这是技术 IP 争端。把同一个 72 小时的其他事件放在一起看，画面不一样。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><img alt="Anthropic 的 72 小时事件时间线" src="images/timeline_72h.png" style="max-width:100%; display:block; margin:1em auto; border-radius:4px"></p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">2 月 23 日</strong>：发布蒸馏指控。同日 IBM 暴跌约 13%，市值蒸发超 300 亿——Anthropic 宣布 Claude Code 可自动化 COBOL 现代化，威胁 IBM 核心咨询业务。严格说，IBM 事件与蒸馏指控没有直接因果关系，但它说明 Anthropic 那一周在多条战线同时出击。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">2 月 24 日</strong>：据 Axios 报道，国防部长 <strong style="color:#ff6827; font-weight:bold">Hegseth</strong> 给 Dario Amodei 发了最后通牒——<strong style="color:#ff6827; font-weight:bold">限周五下午 5:01 前</strong>取消军事使用限制。Anthropic 拒绝的两条红线：不允许 AI 武器无人开火，不允许大规模国内监控。不从的话：动用《国防生产法》强制征用，列为"供应链风险"。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">同一天</strong>，发布新版安全政策 <strong style="color:#ff6827; font-weight:bold">RSP v3</strong>。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">背景：两周前，安全保障研究团队负责人 <strong style="color:#ff6827; font-weight:bold">Mrinank Sharma</strong> 辞职。离职信：<strong style="color:#ff6827; font-weight:bold">"世界处于危险之中"</strong>，安全团队<strong style="color:#ff6827; font-weight:bold">"不断面临压力，被迫搁置最重要的事。"</strong> 同期多名安全研究员离开。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">RSP v3 做了什么？Anthropic 最核心的承诺——"不能事先保证安全就不训练更强模型"——2023 年 RSP v1 的铁律，<strong style="color:#ff6827; font-weight:bold">删了。</strong></p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">新规则：只有在 Anthropic 认为自己领先，<strong style="color:#ff6827; font-weight:bold">并且</strong>灾难风险显著时，才"延迟"开发。SaferAI 直接把评分从 2.2 降到 1.9。LessWrong 上一位参与制定 RSP v3 的 Anthropic 员工承认，这个变化<strong style="color:#ff6827; font-weight:bold">"已经推了大约一年"</strong>。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">Anthropic 自己的联合创始人对 TIME 的表态更直接："停止训练 AI 模型并不会真正帮助任何人。"</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><img alt="TIME杂志报道截图（来源：time.com）" src="images/time_headline.png" style="max-width:100%; display:block; margin:1em auto; border-radius:4px"></p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">《时代》杂志标题：<strong style="color:#ff6827; font-weight:bold">"独家：Anthropic 放弃旗舰安全承诺"</strong>。</p>
+<hr style="border:none; border-top:1px solid #ddd; margin:1.5em 0">
+<h2 style="font-size:20px; font-weight:bold; color:#ff6827; margin:1.5em 0 0.6em; padding-bottom:6px; border-bottom:2px solid #ff6827; line-height:1.4">把线索串起来</h2>
+<p style="margin:0.8em 0; text-align:justify" align="justify">三条线，同一个 72 小时：</p>
+<ol style="margin:0.6em 0; padding-left:2em">
+<li style="margin:0.3em 0"><strong style="color:#ff6827; font-weight:bold">指控中国公司偷 Claude</strong>——占据头条</li>
+<li style="margin:0.3em 0"><strong style="color:#ff6827; font-weight:bold">被五角大楼逼着开放军事使用</strong>——外部压力</li>
+<li style="margin:0.3em 0"><strong style="color:#ff6827; font-weight:bold">主动删除核心安全承诺</strong>——内部瓦解</li>
+</ol>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">"中国威胁"叙事在这个窗口里同时触碰了三个方向</strong>。Anthropic 博客原话："芯片出口限制既能减少直接训练能力，也能减少非法蒸馏的程度。"</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">TechCrunch："指控发布的时间点，正是美国国会激烈辩论 AI 芯片出口管制政策的时候。"</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">换句话说：蒸馏指控提供了"中国AI威胁"的具体案例，而这个叙事正好可以同时为芯片管制加码、为军方施压提供弹药、也为自身放松安全承诺创造舆论空间。Meta 首席 AI 科学家 LeCun 早在 2025 年 11 月就警告过这种模式——闭源公司用安全叙事打压开源竞争对手：</p>
+<blockquote style="margin:1em 0; padding:12px 16px; border-left:4px solid #ff6827; background-color:#fff9f5; color:#666; font-size:15px; line-height:1.7" bgcolor="#fff9f5">
+<p style="margin:0.3em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">"你们正在被那些想要监管俘获的人利用。他们用可疑的研究吓唬所有人，好让开源模型被监管消灭。"</strong></p>
+</blockquote>
+<hr style="border:none; border-top:1px solid #ddd; margin:1.5em 0">
+<h2 style="font-size:20px; font-weight:bold; color:#ff6827; margin:1.5em 0 0.6em; padding-bottom:6px; border-bottom:2px solid #ff6827; line-height:1.4">几个没人回答的问题</h2>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">第一，为什么是这三家？</strong></p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">Anthropic 透露了归因方法：通过元数据追溯到 DeepSeek 的<strong style="color:#ff6827; font-weight:bold">特定研究人员</strong>、月之暗面的<strong style="color:#ff6827; font-weight:bold">高管资料</strong>、MiniMax 的<strong style="color:#ff6827; font-weight:bold">产品发布时间表</strong>。命名门槛是"高置信度归因"。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">没被点名的阿里、百度、字节，都有自己的万卡集群。被点名的三家都是 VC 支持的独立实验室，自有算力有限。<strong style="color:#ff6827; font-weight:bold">缺算力的公司才有最强的蒸馏动机。</strong> Digital Applied 的分析也指出："一个纯政治报告会撒更大的网"——选择性恰恰说明有证据门槛。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">但也没人解释：是其他公司被调查后排除了，还是根本没查。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">第二，15 万次交互能蒸馏出什么？</strong></p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">比直觉要多。Google 2023 年的 "Distilling Step-by-Step" 研究表明，精心设计的思维链蒸馏可以让小模型用远少于原始数据量的样本超越大模型。另一项独立研究：<strong style="color:#ff6827; font-weight:bold">800 条</strong>精选样本就在数学竞赛基准达到 SOTA。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">DeepSeek 自己在 R1 论文里公开用了 <strong style="color:#ff6827; font-weight:bold">80 万条</strong>样本做蒸馏。15 万是这个量的 1/5。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">但 Interconnects 的 Nathan Lambert 认为 15 万条"对 V4 影响可忽略"。<strong style="color:#ff6827; font-weight:bold">这留下一个问题：Anthropic 把 DeepSeek 的 15 万和 MiniMax 的 1300 万放在同一篇博客里，技术归因和公关考量各占多少？没有原始日志，外人无从判断。</strong></p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">第三，蒸馏违法吗？</strong></p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">没有定论。伯克利法学院："结果仍然不确定。"</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">OpenAI 在 API 里提供"模型蒸馏"作为付费产品</strong>，但有结构性区别——输出锁在 OpenAI 生态内，学生模型权重不可导出，ToS 明确禁止用于训练竞品。Anthropic 指控的是：输出被提取到独立模型架构上，权重公开发布。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">前者是平台增值服务，后者是知识外流。技术操作相似，法律定性可能完全不同。同样值得注意：Anthropic 用盗版书训练模型，和第三方通过 API 抓取模型输出，在法律上也是两个完全不同的问题——前者侵犯的是版权人，后者侵犯的是 API 提供方的服务条款。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">第四，3800 亿估值的根基？</strong></p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">2 月 12 日 G 轮 300 亿美元，估值 3800 亿。年化收入 140 亿，仍在亏损。Claude Code 贡献 25 亿年化收入。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">DeepSeek V4 预计近期发布。如果 V4 在编码能力上追平 Claude Code，3800 亿的根基要动摇。在这个时间点发蒸馏指控，时机上很难说纯属巧合。</p>
+<hr style="border:none; border-top:1px solid #ddd; margin:1.5em 0">
+<h2 style="font-size:20px; font-weight:bold; color:#ff6827; margin:1.5em 0 0.6em; padding-bottom:6px; border-bottom:2px solid #ff6827; line-height:1.4">最后</h2>
+<p style="margin:0.8em 0; text-align:justify" align="justify">我不知道这三家有没有蒸馏 Claude。元数据证据指向了一些东西，但原始日志没有公开。MiniMax 的 24 小时流量转向是最接近"吸烟枪"的信号。DeepSeek 的 15 万次，在技术上够做定向能力提取，但对 V4 的实际贡献存疑。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">回到开头。DeepSeek R1 的"My official name is Claude"——这到底证明了什么？</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">Nathan Lambert 的判断：<strong style="color:#ff6827; font-weight:bold">"行为相似性不能证明训练数据来源。"</strong> 多条独立路径可以产生相似行为——共享公开数据、收敛的强化学习、合成数据。Anthropic 自己的检测博客也没拿身份混淆当证据。他们靠的是元数据和流量模式。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">疯传的截图是故事的调味料，不是证据。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">至于 RSP v3——那个"已经推了一年"的安全承诺删除——这件事可能比蒸馏门本身更值得关注。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">但这是另一个案子了。</p>
+<hr style="border:none; border-top:1px solid #ddd; margin:1.5em 0">
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">数据来源声明</strong></p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">本文引用的事实信息来自以下公开来源：Anthropic 官方博客、《华盛顿邮报》、《时代》杂志、CNBC、TechCrunch、Bloomberg、Axios、Semafor、The Register、Hacker News、Interconnects（Nathan Lambert）、Google Research（ACL 2023）、DeepSeek-R1 论文（arXiv:2501.12948）、SaferAI、LessWrong、Digital Applied、伯克利法学院、X Community Notes。法庭文件：<em>Bartz v. Anthropic</em>。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">利益相关声明</strong></p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">本文基于公开资料整合，一家之言。所有引用均来自独立第三方来源，读者可自行验证。</p>
+<hr style="border:none; border-top:1px solid #ddd; margin:1.5em 0">
+<p style="margin:0.8em 0; text-align:justify" align="justify"><strong style="color:#ff6827; font-weight:bold">关于大史</strong>：《三体》里的史强——说话直、不绕弯、只看证据。这个栏目借他的名义，把复杂的事掰开揉碎，事实摆出来，判断你自己下。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify">有想看的选题？后台留言，什么都能写。</p>
+<p style="margin:0.8em 0; text-align:justify" align="justify"><em>降临派手记 · 大史执笔</em></p></section>

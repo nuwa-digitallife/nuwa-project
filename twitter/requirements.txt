@@ -1,0 +1,4 @@
+# 使用 ~/venv/automation 虚拟环境（已安装 playwright）
+# source ~/venv/automation/bin/activate
+playwright>=1.40.0
+python-dotenv>=1.0.0

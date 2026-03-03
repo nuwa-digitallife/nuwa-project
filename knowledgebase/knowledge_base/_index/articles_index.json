@@ -1,0 +1,124 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-02-19",
+  "total_articles": 7,
+  "articles": [
+    {
+      "id": "article_20250119_001",
+      "title": "万字长文推演OpenAI o1 self-play RL 技术路线",
+      "category": "人工智能",
+      "author": "AINLP",
+      "crawl_date": "2025-01-19",
+      "word_count": 9259,
+      "read_status": "unread",
+      "path": "人工智能/AINLP/万字长文推演OpenAI_o1_self-play_RL_技术路线",
+      "tags": [
+        "强化学习",
+        "OpenAI",
+        "o1模型",
+        "self-play",
+        "RL",
+        "大模型"
+      ]
+    },
+    {
+      "id": "article_20260218_001",
+      "title": "一场春节突袭，阿里改写了AI战局",
+      "category": "人工智能",
+      "author": "虎嗅APP",
+      "crawl_date": "2026-02-18",
+      "word_count": 4315,
+      "read_status": "unread",
+      "path": "人工智能/虎嗅APP/一场春节突袭，阿里改写了AI战局",
+      "tags": [
+        "AI",
+        "模型",
+        "商业",
+        "用户"
+      ]
+    },
+    {
+      "id": "article_20260218_002",
+      "title": "都在等梁文锋",
+      "category": "人工智能",
+      "author": "虎嗅APP",
+      "crawl_date": "2026-02-18",
+      "word_count": 2939,
+      "read_status": "unread",
+      "path": "人工智能/虎嗅APP/都在等梁文锋",
+      "tags": [
+        "AI",
+        "模型"
+      ]
+    },
+    {
+      "id": "article_20260218_003",
+      "title": "为什么最懂AI的人在纷纷离职：“我凝视过无尽的黑夜”",
+      "category": "人工智能",
+      "author": "虎嗅APP",
+      "crawl_date": "2026-02-18",
+      "word_count": 5001,
+      "read_status": "unread",
+      "path": "人工智能/虎嗅APP/为什么最懂AI的人在纷纷离职_我凝视过无尽的黑夜",
+      "tags": [
+        "AI",
+        "人工智能",
+        "模型",
+        "文学",
+        "小说"
+      ]
+    },
+    {
+      "id": "article_20260218_004",
+      "title": "机器人“内卷”给14亿人看",
+      "category": "人工智能",
+      "author": "虎嗅APP",
+      "crawl_date": "2026-02-18",
+      "word_count": 2573,
+      "read_status": "unread",
+      "path": "人工智能/虎嗅APP/机器人_内卷_给14亿人看",
+      "tags": [
+        "AI",
+        "模型",
+        "市场",
+        "产品"
+      ]
+    },
+    {
+      "id": "article_20260218_005",
+      "title": "机器人上春晚跳完舞，才是真正考验的开始",
+      "category": "商业",
+      "author": "虎嗅APP",
+      "crawl_date": "2026-02-18",
+      "word_count": 1967,
+      "read_status": "unread",
+      "path": "商业/虎嗅APP/机器人上春晚跳完舞，才是真正考验的开始",
+      "tags": [
+        "商业",
+        "企业"
+      ]
+    },
+    {
+      "id": "article_20260219_001",
+      "title": "Gemini灵魂人物、传奇工程师Jeff Dean最新访谈：未来人均50个虚拟实习生，用不上专家了！",
+      "category": "人工智能",
+      "author": "InfoQ",
+      "crawl_date": "2026-02-19",
+      "word_count": 21399,
+      "read_status": "unread",
+      "path": "人工智能/InfoQ/Gemini灵魂人物、传奇工程师Jeff_Dean最新访谈：未来人均50个虚拟实习生，用不上专家了",
+      "tags": ["AI", "Gemini", "Google", "Jeff Dean", "大模型", "蒸馏", "TPU", "多模态"]
+    }
+  ],
+  "statistics": {
+    "人工智能": 6,
+    "商业": 1,
+    "金融": 0,
+    "个人成长": 0,
+    "历史": 0,
+    "哲学": 0,
+    "文学": 0,
+    "未分类": 0
+  },
+  "notes": "This file tracks all articles in the knowledge base"
+}

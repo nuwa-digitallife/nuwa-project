@@ -1,0 +1,1377 @@
+{
+  "探索AGI": {
+    "fakeid": "MzkxNjcyNTk2NA==",
+    "articles": [
+      {
+        "title": "OpenAI模型搞不赢，开始干些歪门邪道的事了，一份报告让中文互联网直接炸锅了。",
+        "digest": "继anthropic之后，openai又开始点名了。",
+        "link": "https://mp.weixin.qq.com/s/7ky3PRVD9J1DfCkNni_Oyw",
+        "create_time": 1772073983
+      },
+      {
+        "title": "Anthropic：别偷我模型！Claude：我是DeepSeek。",
+        "digest": "Anthropic蒸馏了人类最大的知识库",
+        "link": "https://mp.weixin.qq.com/s/q7SNBC4IQOttCq1LOTZGDw",
+        "create_time": 1771986584
+      },
+      {
+        "title": "我让5个最顶尖的国产大模型，去美国摆了个摊，结果全破产了。",
+        "digest": "给AI 2000美元去摆摊，Opus赚了5万，DeepSeek开始祈祷。",
+        "link": "https://mp.weixin.qq.com/s/TMcG8G6Ubj4N30Gjrpdrmg",
+        "create_time": 1771905389
+      },
+      {
+        "title": "春节Clawdbot烧了30亿token，8块钱就够了？算力自由可能真的来了。",
+        "digest": "试遍国产coding plan，最后被8块钱的方案打脸了。",
+        "link": "https://mp.weixin.qq.com/s/iU9fRYk4DUdZyL2EZkfLxw",
+        "create_time": 1771755524
+      },
+      {
+        "title": "clawdbot新Skill，10分钟登顶全站第一。第二天，被下架了。",
+        "digest": "Agent自我进化彻底火了，10分钟全站登顶。然后，它被下架了。",
+        "link": "https://mp.weixin.qq.com/s/CIj2CBQuG2mxgPHJL_0MqA",
+        "create_time": 1771555422
+      },
+      {
+        "title": "刚刚，谷歌Gemini让8亿人变成音乐家，完全免费，一句话出歌，拍照也行",
+        "digest": "文字、图片、视频、音频，谷歌正在一个 Gemini App 里把所有生成式AI能力集齐。",
+        "link": "https://mp.weixin.qq.com/s/eYmQixFnXMWuaRiQ2kewCw",
+        "create_time": 1771495677
+      },
+      {
+        "title": "除夕夜，阿里丢了一颗核弹：千问3.5只激活4%参数，打平GPT-5.2，价格只要1/15。",
+        "digest": "千问3.5，把闭源模型最后的遮羞布扯掉了。",
+        "link": "https://mp.weixin.qq.com/s/tvdzRLbMvhNpAR5bNhrnAw",
+        "create_time": 1771232956
+      },
+      {
+        "title": "这个免费插件让我对着空气说话，Clawdbot竟然听懂了，还干完了活。",
+        "digest": "这个Clawdbot神级免费插件爆火，对着空气指挥，这下真成《Her》了。",
+        "link": "https://mp.weixin.qq.com/s/RJvoB7TfQYbEGNparlUKhw",
+        "create_time": 1771058836
+      },
+      {
+        "title": "微信输入法2.0终于来了，PC端语音输入，王炸级别。",
+        "digest": "不是Typeless买不起，而是微信输入法2.0更有性价比！",
+        "link": "https://mp.weixin.qq.com/s/xRZyLa4I0i9b8H3Moq-ULQ",
+        "create_time": 1770949668
+      },
+      {
+        "title": "几句话就能复刻一个付费Skill，Skills商店还能卖什么？",
+        "digest": "一问看清，模型之上，最前沿的Agent应用生态。",
+        "link": "https://mp.weixin.qq.com/s/ukkdk6MpkO5TVa9Civ0Wzg",
+        "create_time": 1770867813
+      },
+      {
+        "title": "昨天马斯克转发的那个App，我让一个5岁小孩试了试，他安静地玩了一晚上。",
+        "digest": "Sora更像AI版优酷，被马斯克转发的这个App才是AI版抖音。",
+        "link": "https://mp.weixin.qq.com/s/Xp0FPlJtIGZUfyBdcIVw6g",
+        "create_time": 1770776107
+      },
+      {
+        "title": "美团面试题：如何设计多轮对话智能客服Agent。评论区吵翻了，但答案可能就一句话。",
+        "digest": "一道美团面试题，暴露了90%的人对AI Agent最大的误解。",
+        "link": "https://mp.weixin.qq.com/s/em-FRxasD3CfQI4arA0lMQ",
+        "create_time": 1770695434
+      },
+      {
+        "title": "OpenClaw火了，但它只能控制电脑。这个开源项目直接控制了我的手机！",
+        "digest": "OpenClaw只能控制电脑？这个项目直接拿起我的手机刷起了抖音。",
+        "link": "https://mp.weixin.qq.com/s/y8DgTs4ZyByTML4O8Pmciw",
+        "create_time": 1770603119
+      },
+      {
+        "title": "去年的Multi-Agent全是假的，Anthropic、Kimi、OpenAI集体换玩法了。",
+        "digest": "从1小时到6小时，从1个到100个，Multi-Agent终于不是角色扮演了。",
+        "link": "https://mp.weixin.qq.com/s/58H6MbFJ0kISJrJYRVf7gw",
+        "create_time": 1770433660
+      },
+      {
+        "title": "Anthropic发现一件离谱的事：AI排行榜前几名的差距，可能跟模型能力一点关系都没有。",
+        "digest": "6个百分点，Anthropic揭露了AI编程排行榜最荒诞的真相。",
+        "link": "https://mp.weixin.qq.com/s/UwURuVdYjHYheiiOoelobw",
+        "create_time": 1770349815
+      },
+      {
+        "title": "第一批用Clawdbot赚钱的人出现了，一晚49万美元，5美元变370万，这怎么玩的？",
+        "digest": "Clawdbot彻底疯了：有人一晚赚49万美元，有人5美元变370万。",
+        "link": "https://mp.weixin.qq.com/s/WREPeByyKgAiN4jgiyzrtg",
+        "create_time": 1770263403
+      },
+      {
+        "title": "我把Cowork和各种平替都试了一遍，终于给Windows找到一个能打的了。",
+        "digest": "Windows用户起飞，终于有好用的桌面Agent了。",
+        "link": "https://mp.weixin.qq.com/s/XH1OKs3pKCS-Morlkfu9kg",
+        "create_time": 1770172773
+      },
+      {
+        "title": "我扒开Clawdbot的底层架构，简单到离谱，你看完就能自己写。",
+        "digest": "看完Clawdbot源码，我懵了：就这？？？",
+        "link": "https://mp.weixin.qq.com/s/RB3fFrnj07isFj3zIC-TYQ",
+        "create_time": 1770089658
+      },
+      {
+        "title": "我爬了Moltbook所有的帖子，发现这就是一场骗局。",
+        "digest": "哥大教授发布第一篇Moltbbok帖子分析论文，为什么我们这么渴望AI觉醒？",
+        "link": "https://mp.weixin.qq.com/s/zhYQFWY3qGMyGTCJ9Zy9oA",
+        "create_time": 1770003787
+      },
+      {
+        "title": "我烧了上亿token玩Clawdbot，结果发现国产平替更香，还免费。",
+        "digest": "Clawdbot彻底火了，券商开始摇旗呐喊Agent商用元年拐点来了。",
+        "link": "https://mp.weixin.qq.com/s/MY3z3htmSkBA7Kmo_9SKXg",
+        "create_time": 1769764698
+      }
+    ]
+  },
+  "InfoQ": {
+    "fakeid": "MjM5MDE0Mjc4MA==",
+    "articles": [
+      {
+        "title": "我们再也回不去了：AI 围城下的技术生态现实",
+        "digest": "这场正在发生的 AI 冲击都是坏事吗？它是否会像中世纪的围城战一样，最终以惨烈的结局收场？",
+        "link": "https://mp.weixin.qq.com/s/8axUURYocu_7FJj78hLStg",
+        "create_time": 1772013794
+      },
+      {
+        "title": "DeepSeek V4 压顶，Anthropic CEO 先动手了：一场漏洞百出的舆论战，从构陷到翻车",
+        "digest": "这段时间，华尔街造了“新神”Anthropic。",
+        "link": "https://mp.weixin.qq.com/s/C-LxdjTLvWw7ic-CeUQxxA",
+        "create_time": 1772005332
+      },
+      {
+        "title": "从上下文到长期记忆：大模型记忆工程的架构设计与实践",
+        "digest": "随着大模型在企业和行业场景中持续落地，“记忆”正在成为继参数调优和上下文工程之后的下一个工程化核心。",
+        "link": "https://mp.weixin.qq.com/s/jO38bghvaLpjOnQB8aY3uA",
+        "create_time": 1772005332
+      },
+      {
+        "title": "使用 AI 生成了 MVP，这对软件架构来说意味着什么",
+        "digest": "AI生成的代码会带来隐含的架构决策，迫使团队依靠实验来验证质量属性。若想从 AI 中得到有效结果，团队必须清晰阐述设计权衡与推导逻辑，让模型能够生成符合预期  QAR 的方案。",
+        "link": "https://mp.weixin.qq.com/s/aXzpSntH8_mZfkCa5i8yrg",
+        "create_time": 1772005332
+      },
+      {
+        "title": "Uber 和 OpenAI 重组了限流系统",
+        "digest": "优步和OpenAI讨论了他们对限流方法的转变。",
+        "link": "https://mp.weixin.qq.com/s/YEHCTNG0e8Hiab8PgqaQyw",
+        "create_time": 1772005332
+      },
+      {
+        "title": "最卷春节档，改写模型“地板”的只有 TA",
+        "digest": "电影圈或许也没想到，抢走 2026 年春节档风头的，竟然是 AI。",
+        "link": "https://mp.weixin.qq.com/s/lzzgRbQBr39LAODFxjQtZQ",
+        "create_time": 1771918554
+      },
+      {
+        "title": "1500 个 PR、0 人写代码：Codex 驱动的百万行级内部产品实践",
+        "digest": "OpenAI 内部实验：构建 100% 由 Agent 生成、无人工代码的软件系统。",
+        "link": "https://mp.weixin.qq.com/s/HTGvy5C6SYyr5XQhTfTfzw",
+        "create_time": 1771918554
+      },
+      {
+        "title": "开工！百万极客红包火热派发中 | 极客时间",
+        "digest": "🧧 开工第一天，给自己来点开门红。假期余额清零，状态正式重启。与其空喊 Flag，不如先拿个好彩头。",
+        "link": "https://mp.weixin.qq.com/s/_1cQDPGBR64fCrfgZOLB3g",
+        "create_time": 1771918554
+      },
+      {
+        "title": "Agoda API Agent：零代码、零部署，将任意 API 转换为 MCP",
+        "digest": "Agoda 工程师开发零代码、零部署的 API Agent 系统，可让单个 MCP 服务器对接内部 REST 或 GraphQL API。",
+        "link": "https://mp.weixin.qq.com/s/izF_hbHuRZkfg_-YL9wKZQ",
+        "create_time": 1771918554
+      },
+      {
+        "title": "全行业盯了两年的编程能力榜，今天退役！OpenAI 停用 SWE-bench Verified：未来标准将看 AI 能顶替多少程序员？",
+        "digest": "代码模型榜单接下来要回答的，不是“能不能再高一分”，而是“能不能真的把一部分人类工作接过去”？！",
+        "link": "https://mp.weixin.qq.com/s/JyX0Jfo90lUxR9yhvwYUKQ",
+        "create_time": 1771914025
+      },
+      {
+        "title": "MiniMax 成为 Token 调用第一后，模型厂商必须面对的 AgentOS 现实",
+        "digest": "AgentOS友好的LLM，是模型厂商的下一个战场",
+        "link": "https://mp.weixin.qq.com/s/0vAWHzlEZnhZYolHTvM1bg",
+        "create_time": 1771838733
+      },
+      {
+        "title": "DeepMind 运作模式曝光！暗示根本没输 OpenAI：员工20% 时间重启创新，保守巨头直接变 “实验狂”",
+        "digest": "很多人知道，Transformer 是谷歌发明的。",
+        "link": "https://mp.weixin.qq.com/s/89Nz2EXpBiMjjQTJLesPRg",
+        "create_time": 1771833734
+      },
+      {
+        "title": "印度一大学买宇树机器狗冒充自研，被扒后坦白；智谱致歉并宣布补偿，《镖人》用 Seedance 2.0 做片尾彩蛋；OpenAI 算力狂想退烧｜Q资讯",
+        "digest": "有瓜？！吃嘛~",
+        "link": "https://mp.weixin.qq.com/s/ukx-tjva2hTh278_UC4T5g",
+        "create_time": 1771741972
+      },
+      {
+        "title": "别再学做App了：Karpathy预言Agent将淘汰App Store，软件进入“用完即丢”时代",
+        "digest": "网友：“你奶奶会自己做APP吗？”",
+        "link": "https://mp.weixin.qq.com/s/IqPA7X5A12dnAcaaVxC7Ig",
+        "create_time": 1771738614
+      },
+      {
+        "title": "收购不成便带头封杀？！Meta 痛下狠手，OpenClaw 彻底失控：被拒后竟“人肉”网暴人类，实锤无人操控",
+        "digest": "现实世界中首例 AI 行为失控的案例出现了。",
+        "link": "https://mp.weixin.qq.com/s/YH-9tohmSZf_jyOq59bm9g",
+        "create_time": 1771651839
+      },
+      {
+        "title": "LLVM之父拆解Claude构建的C编译器：当 AI 把几十年工程实践变成默认能力，软件工程开始换玩法",
+        "digest": "2 月 6 日，Anthropic 发布工程博客：他们让 Opus 4.6 以agent 团队方式构建一套 C 编译器，“基本放手”两周后，它能在 Linux 内核上工作。",
+        "link": "https://mp.weixin.qq.com/s/NYKDLw_yVOJEvrobNLfGgg",
+        "create_time": 1771639068
+      },
+      {
+        "title": "编码新王登基！Gemini 3.1 Pro 血洗 Claude 与 GPT，12 项基准测试第一！",
+        "digest": "Gemini 3.1 Pro 深夜屠榜、斩获 12 项第一，Claude 与 GPT 瑟瑟发抖。",
+        "link": "https://mp.weixin.qq.com/s/iIzp5HnSfAXM2VBTpGHOFQ",
+        "create_time": 1771549805
+      },
+      {
+        "title": "“软件工程师”头衔要没了？Claude Code之父YC访谈：一个月后不再用plan mode，多Agent开始自己组队干活",
+        "digest": "Claude Code代码六个月就过期了",
+        "link": "https://mp.weixin.qq.com/s/STwaKlbA9v6KlDrPI2DEow",
+        "create_time": 1771493116
+      },
+      {
+        "title": "AI 编程是一种“框架”",
+        "digest": "作者 | 朱雷\t使用 AI 类编程工具越多，我便越来越强烈地感觉到：AI 编程是一种“框架（Framework",
+        "link": "https://mp.weixin.qq.com/s/DIHW66K7Thj4D3fLW5Wvvg",
+        "create_time": 1771466890
+      },
+      {
+        "title": "OpenAI 一线开发现实观察：能同时盯住 10～20 个 Agent、跑小时级任务的人，正在把其他工程师远远甩开",
+        "digest": "OpenAI API 负责人最新访谈：工程师分层加速，产出差距拉到 70%，下一轮的分水岭是“会不会并行调度 Agent、跑小时级任务”",
+        "link": "https://mp.weixin.qq.com/s/hyP0xdbNNJJTKOboKKQMEw",
+        "create_time": 1771392332
+      }
+    ]
+  },
+  "量子位": {
+    "fakeid": "MzIzNjc1NzUzMw==",
+    "articles": [
+      {
+        "title": "21万年费彭博终端机被AI复刻！Perplexity俩月憋出新“PC”：整合所有AI功能，以Opus为核心调度19个模型",
+        "digest": "与OpenClaw相比“更安全”",
+        "link": "https://mp.weixin.qq.com/s/RWqcuSfMllMKpw8Me7MYRg",
+        "create_time": 1772077587
+      },
+      {
+        "title": "Karpathy：AI编程已质变，就从去年12月开始",
+        "digest": "变化来得太猛烈……",
+        "link": "https://mp.weixin.qq.com/s/7Rb1v46jGnba5m7R6idStg",
+        "create_time": 1772077587
+      },
+      {
+        "title": "日进22.6亿！英伟达营收暴涨73%再破纪录，盘后股价重返200美元",
+        "digest": "超越英伟达的只有自己",
+        "link": "https://mp.weixin.qq.com/s/uLrGrbpEE6k2x8oHvWoDMw",
+        "create_time": 1772070678
+      },
+      {
+        "title": "扩散模型成最快深度思考！告别自回归每秒1009个tokens，英伟达微软都投了",
+        "digest": "“AI不应该像单向打字机那样运作，而应该更像一个编辑”",
+        "link": "https://mp.weixin.qq.com/s/HF70C1IIk5bNouWWt0h_8Q",
+        "create_time": 1772070678
+      },
+      {
+        "title": "MiniMax又又来吃龙虾肉了！OpenClaw真·一键部署，还有上万专家智能体等你差遣",
+        "digest": "聊着天就能构建自己的专属Expert",
+        "link": "https://mp.weixin.qq.com/s/cLW-zKzQpDu59IIiTTSd0Q",
+        "create_time": 1772024453
+      },
+      {
+        "title": "陶哲轩来给AI数学泼冷水了",
+        "digest": "成也想法，败也想法",
+        "link": "https://mp.weixin.qq.com/s/RWNVCVsavZFBIve-DNnuww",
+        "create_time": 1772024453
+      },
+      {
+        "title": "CVPR 2026新增赛道！EgoCross挑战赛：用四大杀手级场景，考验多模态大模型泛化极限",
+        "digest": "EgoCross Challenge跨域第一视角视频问答，等你冲榜！",
+        "link": "https://mp.weixin.qq.com/s/W9dsLimSzXe6rGll-1qOyA",
+        "create_time": 1772024453
+      },
+      {
+        "title": "量子位编辑作者招聘",
+        "digest": "3个岗位（含实习），不设边界",
+        "link": "https://mp.weixin.qq.com/s/8fFhb8_lRY-NT-NFmC3qYw",
+        "create_time": 1772024453
+      },
+      {
+        "title": "马年4大顶流模型会师阿里云Coding Plan开工！Token量大管饱，自由切换真香",
+        "digest": "新用户低至首月7.9元",
+        "link": "https://mp.weixin.qq.com/s/eScj79-v3iIw49rlYEO1HA",
+        "create_time": 1772018102
+      },
+      {
+        "title": "龙虾之父新访谈，OpenClaw内幕全公开！“拦不住滥用，只劝大家别玩火”",
+        "digest": "龙虾之父也曾被AI编程啪啪打脸",
+        "link": "https://mp.weixin.qq.com/s/NiNAjU_AziuLYLA5MyNtOQ",
+        "create_time": 1771997466
+      },
+      {
+        "title": "融资34亿！谷歌前TPU员工创业新型芯片，卡帕西也投了",
+        "digest": "预计2027年开始出货",
+        "link": "https://mp.weixin.qq.com/s/RGAe9ePa91g0zeZytIn3MA",
+        "create_time": 1771997466
+      },
+      {
+        "title": "清华数学系大神跳槽OpenAI！曾主导SAM与Llama开发，Sora负责人：欢迎加入",
+        "digest": "主攻世界模拟与机器人学",
+        "link": "https://mp.weixin.qq.com/s/9nJEOJeW-7aEXZZRf-n0XQ",
+        "create_time": 1771991672
+      },
+      {
+        "title": "不是所有token都平等！谷歌提出真·深度思考：思维链长≠深度推理",
+        "digest": "token数量和推理质量，没啥正相关",
+        "link": "https://mp.weixin.qq.com/s/oNQUK38xBbQRXbSCLgymgQ",
+        "create_time": 1771991672
+      },
+      {
+        "title": "Kimi春节档挣超一年钱！这口“龙虾肉”大厂开始抢吃了",
+        "digest": "网易阿里也杀进龙虾局",
+        "link": "https://mp.weixin.qq.com/s/0pIETSTU904ULdffl2u11g",
+        "create_time": 1771918003
+      },
+      {
+        "title": "Anthropic一篇博客，IBM大跌13%，创25年来最大单日跌幅",
+        "digest": "搅动股价这档子事，Anthropic已经干了第三回了。",
+        "link": "https://mp.weixin.qq.com/s/rbWKuLY5NF7DMM-2binZmg",
+        "create_time": 1771918003
+      },
+      {
+        "title": "字节Seed用化学思想搞AI，把DeepSeek-R1的脑回路拆成了分子结构",
+        "digest": "AI长思维链是分子结构，深度推理就是共价键",
+        "link": "https://mp.weixin.qq.com/s/yL4n7oiWhLIlX31VeUU2xw",
+        "create_time": 1771910465
+      },
+      {
+        "title": "OpenClaw失控受害者+1！Meta高管邮件惨遭删除",
+        "digest": "通过物理方法才终于停下",
+        "link": "https://mp.weixin.qq.com/s/i26zdDTLcni3kJqUxBhnAg",
+        "create_time": 1771910465
+      },
+      {
+        "title": "DeepSeek连更GitHub，华尔街回想起被支配的恐惧：“DeepSeek第二时刻”要来了",
+        "digest": "DeepSeek一开工，美国AI圈抖三抖",
+        "link": "https://mp.weixin.qq.com/s/hMevSIvV0O8Zhn6vg8-V1Q",
+        "create_time": 1771905351
+      },
+      {
+        "title": "黑客挖出苹果隐藏硬件！你的MacBook里有加速计/陀螺仪，摔没摔过售后都知道",
+        "digest": "AppleCare拒保新套路",
+        "link": "https://mp.weixin.qq.com/s/X1FjH5PvsR19hQ2lKAgEoQ",
+        "create_time": 1771905351
+      },
+      {
+        "title": "量子位编辑作者招聘",
+        "digest": "3个岗位（含实习），不设边界",
+        "link": "https://mp.weixin.qq.com/s/x667HI4WhUAwN3qT0ZCUBA",
+        "create_time": 1771905351
+      }
+    ]
+  },
+  "财经杂志": {
+    "fakeid": "MjM5NDU5NTM4MQ==",
+    "articles": [
+      {
+        "title": "美国“软件末日论”蔓延，情绪背后的真相是什么？",
+        "digest": "AI让资本市场逐渐开始重新考虑SaaS软件公司的长期估值逻辑，这种市场情绪背后有诸多考虑因素",
+        "link": "https://mp.weixin.qq.com/s/3dX_wwvRaxLaceVr1tjXkg",
+        "create_time": 1772068355
+      },
+      {
+        "title": "中信出版涨停，春晚后的AI应用红利释放？",
+        "digest": "中信出版的长期目标是，实现整体战略转型，从单一图书出版经营单元发展为具有核心竞争力的动漫IP运营服务公司文",
+        "link": "https://mp.weixin.qq.com/s/pSzBu2jqRp3Hy1Ts3OYcmg",
+        "create_time": 1772019563
+      },
+      {
+        "title": "当年轻人主导春节，反向过年带飞酒店业",
+        "digest": "“最长春节”产生24.6亿人次人员流动，催生团圆新模式，银发族在一线城市入住增56%，劳务输出大县酒店入住量翻倍",
+        "link": "https://mp.weixin.qq.com/s/uisPJx1LEJRV3tFXTRa_mg",
+        "create_time": 1772014804
+      },
+      {
+        "title": "上市涨超100%，医械板块要复苏了吗",
+        "digest": "中国创新医械，已经站在了全球投资市场的主战场",
+        "link": "https://mp.weixin.qq.com/s/WflwfsBqp-TbyZ5x0uEdpw",
+        "create_time": 1772014804
+      },
+      {
+        "title": "特别策划｜国际金融中心重新繁荣，香港大学现内地企业家读书潮",
+        "digest": "香港火热的资本市场、生机勃勃的科创生态等，让选择来港大读书的企业家们大呼“值得”",
+        "link": "https://mp.weixin.qq.com/s/9qByNRd4WIiOGKshRT5ZPA",
+        "create_time": 1772014804
+      },
+      {
+        "title": "上海房市新政：公积金最高可贷324万",
+        "digest": "新政体现了对各类住房需求的进一步支持，尤其包括职住平衡、宜居安居、刚需改善等需求维度，将促进各类购房需求的进一",
+        "link": "https://mp.weixin.qq.com/s/GUQmyOa8kfz-ElVaDQR8hg",
+        "create_time": 1772013864
+      },
+      {
+        "title": "内幕交易、操纵市场民事赔偿，最高法院明确将制定司法解释",
+        "digest": "业内人士表示，对内幕交易、操纵市场等民事赔偿司法解释的出台已期待多时，期待司法解释落地后对投资者维权行为起到更多的指引作用，减少投资者的维权成本和维权时间",
+        "link": "https://mp.weixin.qq.com/s/B3KB2E7zs5UO33sE2UHosg",
+        "create_time": 1772013864
+      },
+      {
+        "title": "特朗普加征10%关税生效，中国商务部回应",
+        "digest": "中国商务部新闻发言人就美国最新关税调整答记者问时回应，中方正密切关注并将全面评估美方相关举措",
+        "link": "https://mp.weixin.qq.com/s/ZX3FU04nzQuaUaJgfZZyRA",
+        "create_time": 1771985313
+      },
+      {
+        "title": "三年减少1.1亿张，信用卡数量跌破7亿关口",
+        "digest": "伴随卡量“瘦身”的还有贷款余额下降、权益减少、信用卡分中心关停潮等。在业内人士看来，这是行业从“跑马圈地”走向高质量发展必经的阵痛",
+        "link": "https://mp.weixin.qq.com/s/JmNjzyvGprm9kTHIQBi0Zw",
+        "create_time": 1771985313
+      },
+      {
+        "title": "马年A股开门红，谁来接力？",
+        "digest": "随着两会临近，政策预期或将逐步成为市场交易的重点",
+        "link": "https://mp.weixin.qq.com/s/Y2_yTBhdLB3cMF2rK8Zk4A",
+        "create_time": 1771932737
+      },
+      {
+        "title": "欧洲议会紧急搁置欧美贸易协议批准程序",
+        "digest": "欧盟之所以成为输家，是因为在贸易的世界里，并没有绝对的公平，只有相对的门槛",
+        "link": "https://mp.weixin.qq.com/s/ATJroMWv-Bn2ERwLlz7u9Q",
+        "create_time": 1771932737
+      },
+      {
+        "title": "争夺显示产业新高地 |《财经》封面",
+        "digest": "显示产业的下半场已经开启，韩国企业暂时领先，在上半场大获全胜的中国企业紧追不舍，并首次引领全新技术路线",
+        "link": "https://mp.weixin.qq.com/s/DA9FnzGg5mFTgs21SmN-iw",
+        "create_time": 1771928512
+      },
+      {
+        "title": "全球资本增持美债背后",
+        "digest": "展望未来，美债市场可能面临更为严峻的供需失衡挑战",
+        "link": "https://mp.weixin.qq.com/s/LIfCzzRis0BaF1wEEDR0lA",
+        "create_time": 1771928512
+      },
+      {
+        "title": "机构如何摆脱身份陷阱？ |《财经》书摘",
+        "digest": "",
+        "link": "https://mp.weixin.qq.com/s/Hxvp7Mi6THA9j_lhi3FDrg",
+        "create_time": 1771928512
+      },
+      {
+        "title": "从濒临淘汰到王者归来，磷酸铁锂三十年逆袭路",
+        "digest": "从1996年首次在实验室被确认可作为电池材料，到2026年成为无可争议的全球主流锂电池技术路线，磷酸铁锂的30年变迁充满了大起大落",
+        "link": "https://mp.weixin.qq.com/s/ZTzJ5f6h9wpffrDvsNySww",
+        "create_time": 1771899984
+      },
+      {
+        "title": "港股高开高走，A股“开门红”稳了？",
+        "digest": "港股高开红盘，拉升了市场对A股“开门红”的期待",
+        "link": "https://mp.weixin.qq.com/s/j3lltDPO_J4ANdc7hA_xWg",
+        "create_time": 1771839503
+      },
+      {
+        "title": "香港收购宏福苑火灾房公布“明细账”",
+        "digest": "“宏福苑火灾规模及影响前所未有，收购价可让受灾家庭基本上有能力重置长远居所。”但针对“特别中的特别”所涉及的近40亿元支出等相关安排，则属于“下不为例”",
+        "link": "https://mp.weixin.qq.com/s/2Ge_BDeJFVla46CEKdmUMA",
+        "create_time": 1771839503
+      },
+      {
+        "title": "司法叫停“紧急状态关税”：全球供应链面临新变数",
+        "digest": "此次司法叫停“紧急状态关税”，或将成为美国国内政治影响力见顶的信号，预示其执政逻辑正从“无限制的行政主导”转向“在司法与立法约束下艰难博弈”",
+        "link": "https://mp.weixin.qq.com/s/bf6Ycp3rFjudUmuuuNXIrw",
+        "create_time": 1771839503
+      },
+      {
+        "title": "沈联涛：欧洲能否走出瘫痪",
+        "digest": "自法国和德国的政府陷入分裂状态以来，欧盟作为一个整体在如何应对国防、技术与资本市场领域关乎存亡的地缘政治变局上，决策过程变得异常缓慢且痛苦",
+        "link": "https://mp.weixin.qq.com/s/Y-8-CaCu40ICpr6fooyjsA",
+        "create_time": 1771761206
+      },
+      {
+        "title": "爱因斯坦：战火中的沉思者 | 《财经》书摘",
+        "digest": "",
+        "link": "https://mp.weixin.qq.com/s/VQT-jqzoevyvOoOw5eaHLg",
+        "create_time": 1771761206
+      }
+    ]
+  },
+  "AI信息Gap": {
+    "fakeid": "MzkwMzYzMTc5NA==",
+    "articles": [
+      {
+        "title": "刚刚，Anthropic 放大招！800 万围观的「手机写代码」最佳方案来了",
+        "digest": "Anthropic 又双叒叕更新了。「Remote Control」。",
+        "link": "https://mp.weixin.qq.com/s/tCkETxRtrlYtK3P4t927Kw",
+        "create_time": 1772060483
+      },
+      {
+        "title": "一招解决你的 token 焦虑！附 Claude Code + OpenClaw 手把手教程（建议收藏）",
+        "digest": "阿里云百炼 Coding Plan 首月 7.9 元，8 个国产顶级模型随便切，附 Claude Code 和 OpenClaw 完整接入教程。",
+        "link": "https://mp.weixin.qq.com/s/BdYe5dJ5bjgsJ2rzrP02Rw",
+        "create_time": 1772035553
+      },
+      {
+        "title": "刚刚，Anthropic 再出手！昨天 IBM 崩了，今天轮到所有打工人",
+        "digest": "今天的 Claude Cowork，瞄准的是所有打工人。",
+        "link": "https://mp.weixin.qq.com/s/oE07R85kH1fXVffC1mwGYg",
+        "create_time": 1771977543
+      },
+      {
+        "title": "谷歌无预警大规模封号，249 美元的 Ultra 也没放过...",
+        "digest": "谷歌开始封号了。大规模的那种。",
+        "link": "https://mp.weixin.qq.com/s/yDmJgLMQ4z1NPV9HycKi4w",
+        "create_time": 1771967659
+      },
+      {
+        "title": "三大国产 AI 遭点名！Anthropic「贼喊捉贼」，马斯克贴脸嘲讽",
+        "digest": "Anthropic 销毁百万本书训练 Claude，转头说别人「偷」。",
+        "link": "https://mp.weixin.qq.com/s/-ppV_wfrn4-VCaQjrwz50Q",
+        "create_time": 1771883929
+      },
+      {
+        "title": "被 GPT-5.2「夺舍」？谷歌 Gemini 3.1 Pro 深度实测来了",
+        "digest": "Gemini 3.1 Pro 深度实测：跑分 12 项第一，价格不到 Claude 一半，幻觉降了快一半，一句话能造一个 macOS。",
+        "link": "https://mp.weixin.qq.com/s/hvoxawIP6e7LD8LgwW7EvA",
+        "create_time": 1771878133
+      },
+      {
+        "title": "170 万围观！继「Vibe Coding」后，Karpathy 又造了个新词：Claw",
+        "digest": "Karpathy：AI 技术栈又多了一层。Chat -> Code -> Claw 🦞。",
+        "link": "https://mp.weixin.qq.com/s/-Is77gkIr8BASNoHKE1yUg",
+        "create_time": 1771799585
+      },
+      {
+        "title": "100 美元/月！ChatGPT 新订阅「Pro Lite」曝光，Plus 危？",
+        "digest": "ChatGPT 新订阅「Pro Lite」，100 美元/月。",
+        "link": "https://mp.weixin.qq.com/s/gCELWY70HiiTttNPjX11Xg",
+        "create_time": 1771796500
+      },
+      {
+        "title": "神仙打架！OpenClaw 惨遭封杀，Gemini 3.1 推理翻倍，Sonnet 4.6 以小博大！| AI Weekly 2.16-2.22",
+        "digest": "2026 春节第一周，AI 圈神仙打架！",
+        "link": "https://mp.weixin.qq.com/s/wnPatpxBJNSiSPq3y-5KBQ",
+        "create_time": 1771690547
+      },
+      {
+        "title": "刚刚，Anthropic 再出手！最强安全 Agent 发布，网安股集体崩了",
+        "digest": "刚刚，Anthropic 发布了 Claude Code Security。网安股集体暴跌。",
+        "link": "https://mp.weixin.qq.com/s/C40uC_-0H6RwSPSW-ZFxUA",
+        "create_time": 1771625254
+      },
+      {
+        "title": "突发！刚刚，谷歌发布 Gemini 3.1 Pro：推理翻倍，12 项第一，免费！",
+        "digest": "刚刚，谷歌发布 Gemini 3.1 Pro！",
+        "link": "https://mp.weixin.qq.com/s/4du5JzsTryQ3BR_cAwD9Gg",
+        "create_time": 1771535305
+      },
+      {
+        "title": "2 小时登顶 ClawHub，你的 OpenClaw 该「进化」了！",
+        "digest": "一个 AI 插件，2 小时登顶 ClawHub，36000 下载全靠 AI 自己传播。被下架勒索后，这个团队自建了一套 Agent 进化协议。",
+        "link": "https://mp.weixin.qq.com/s/zxehrqWyu-9kJx3UbKf_JA",
+        "create_time": 1771517014
+      },
+      {
+        "title": "刚刚，谷歌 Gemini 让 7.5 亿人成为「音乐家」：拍照出歌，免费！",
+        "digest": "刚刚，谷歌 Gemini 上线 AI 音乐生成模型 Lyria 3！",
+        "link": "https://mp.weixin.qq.com/s/jTUvdIUwbXs4JJ3vckwjaQ",
+        "create_time": 1771447338
+      },
+      {
+        "title": "春晚不是第一站？这个算力地标早就霸屏了！",
+        "digest": "春晚之后，今天刷到不少关于合肥先进计算中心「巢湖明月」的科普，聊点可能大家不太知道的细节。\n\n很多人以为中科曙光硅立方第一次上春晚就是昨晚的央视春晚，其实在此之前，宜昌的硅立方早就登上过当地春晚舞台。\n\n连续霸屏地方和央视两大春晚，排面够大。\n\n这两年各地春晚都在打科技牌，硅立方能成为最火的舞台背景也不意外。透明模块化设计，灯光一打，未来感直接拉满。\n\n关键它真不是空壳子，里面实实在在跑着算力。\n\n宜昌那个硅立方，现在是华中地区算力枢纽，当地水电便宜，正好给「东数西算」当底座，服务生物医药、智能制造这些产业。\n\n合肥「巢湖明月」更猛，直接支撑大科学装置，AI 训练、五算融合都在往里跑。\n\n以前算力中心都藏得深，现在敢从幕后走到台前，接连登上春晚，说明国产算力确实有底气了。这背后是中科曙光的积累，也是整个国产算力在往上走。\n\n这波曙光确实赢麻了，这种事儿希望能多来点，让更多人知道国产算力不只是「能用」，是真的「能打」。\n\n<a class=\"wx_topic_link\" topic-id=\"mlrjqxd0-dlv3ly\" style=\"color: #576B95 !important;\" data-topic=\"1\">#春晚</a> <a class=\"wx_topic_link\" topic-id=\"mlrjqxd1-eobvd5\" style=\"color: #576B95 !important;\" data-topic=\"1\">#硅立方</a> <a class=\"wx_topic_link\" topic-id=\"mlrjqxd1-2aeb8x\" style=\"color: #576B95 !important;\" data-topic=\"1\">#中科曙光</a> <a class=\"wx_topic_link\" topic-id=\"mlrjqxd1-obzcn6\" style=\"color: #576B95 !important;\" data-topic=\"1\">#国产算力</a>",
+        "link": "https://mp.weixin.qq.com/s/1tYPYO_kM0Fki7alBoiikw",
+        "create_time": 1771390744
+      },
+      {
+        "title": "春节第二弹：马斯克 Grok 4.20 突袭！4 个 AI 互喷，系统指令曝光",
+        "digest": "马斯克 Grok 4.20 悄悄上线，4 个 Agent 实时讨论，系统提示词已被扒出。",
+        "link": "https://mp.weixin.qq.com/s/byZxYjvPUyGYpL5ZHUj0Xg",
+        "create_time": 1771365806
+      },
+      {
+        "title": "春节第三弹：刚刚，Claude Sonnet 4.6 发布！Opus 水平，免费用",
+        "digest": "刚刚，Claude Sonnet 4.6 正式发布。Opus 的水平，Sonnet 的价格，免费可用。",
+        "link": "https://mp.weixin.qq.com/s/iECnJC0kWKMY6HlhMzSHGg",
+        "create_time": 1771365806
+      },
+      {
+        "title": "DeepSeek-V4「跑分泄露」全网疯传？硬核打假来了！",
+        "digest": "一张 DeepSeek V4「泄露跑分」图全网疯传，数字炸裂。但大概率是假的。",
+        "link": "https://mp.weixin.qq.com/s/I3ztIosrPJ0NEwQijd6EHw",
+        "create_time": 1771280371
+      },
+      {
+        "title": "除夕夜，阿里炸场！Qwen3.5 开源，397B 吊打自家万亿旗舰",
+        "digest": "除夕夜，别人发红包，阿里发模型。",
+        "link": "https://mp.weixin.qq.com/s/eFRUguLF9hKmlMaW1h3VwQ",
+        "create_time": 1771276874
+      },
+      {
+        "title": "刚刚，OpenClaw 之父官宣加入 OpenAI！",
+        "digest": "刚刚，OpenClaw 之父 Peter Steinberger 加入 OpenAI。\n\nOpenAI CEO Sam Altman 在 X 上官宣，说他是「天才」，将负责 OpenAI 下一代个人 Agent 的开发。\n\n好消息是，OpenClaw 项目本身会转为基金会运营，继续开源。\n\n坏消息是，开源个人智能体刚跑出势头，创始人就被巨头收编了。\n\n---\n\nClawdbot，Moltbot，到现在的 OpenClaw。\n\n三个月，GitHub 19 万 Stars，600 个贡献者，10000 次提交。\n\n这个速度，开源史上罕见。\n\nMeta 和 OpenAI 同时抢人。\n\nSteinberger 上周在旧金山跟各大实验室密集接触，最终选了 OpenAI。\n\n他这样说，「我完全可以把 OpenClaw 做成一家大公司。但说实话，这对我没什么吸引力。我已经花了 13 年建过一家公司了。我想改变世界，不想再管一家公司。」\n\n他给自己定的下一个目标，「做一个连我妈都会用的 Agent。」\n\n一个人的开源项目，三个月成为全球最火的 AI Agent 框架，然后被 5000 亿美元估值的 AI 巨头收编。\n\n这大概就是 2026 开年来最精彩的 AI 故事。\n\n<a class=\"wx_topic_link\" topic-id=\"\" style=\"color: #576B95 !important;\" data-topic=\"1\">#OpenClaw开源项目</a> <a class=\"wx_topic_link\" topic-id=\"\" style=\"color: #576B95 !important;\" data-topic=\"1\">#AI行业动态</a> <a class=\"wx_topic_link\" topic-id=\"\" style=\"color: #576B95 !important;\" data-topic=\"1\">#OpenAI新成员</a> <a class=\"wx_topic_link\" topic-id=\"\" style=\"color: #576B95 !important;\" data-topic=\"1\">#AI技术前沿</a>",
+        "link": "https://mp.weixin.qq.com/s/WDFmuR7IE2TMnTL3dk1yig",
+        "create_time": 1771202428
+      },
+      {
+        "title": "太颠了！AI Agent 自建「成人网站」，P 站母公司发来律师函...",
+        "digest": "AI 都开始给自己建成人网站了，人类点进去直接被拉黑。",
+        "link": "https://mp.weixin.qq.com/s/B-FBMb3D7Eb8MllJwU5U-A",
+        "create_time": 1771192715
+      }
+    ]
+  },
+  "馒头商学": {
+    "fakeid": "MzA3MDk4NzMzNg==",
+    "articles": [
+      {
+        "title": "麻省理工研究实锤：跟AI合作越久，你可能变得越笨",
+        "digest": "别再问“AI会取代我吗？”，要问“在跟AI这个新物种的协同进化中，我如何把自己‘活’得越来越像人？”这，才是认知改变的根本。",
+        "link": "https://mp.weixin.qq.com/s/rYZsfHPnfrRXINhcz0D_9w",
+        "create_time": 1772059722
+      },
+      {
+        "title": "春节回来，世界又变天了",
+        "digest": "2026新世界的注脚",
+        "link": "https://mp.weixin.qq.com/s/6Gc1qVBYWLdLT5d5Jf_iqg",
+        "create_time": 1772059722
+      },
+      {
+        "title": "诞生两个百亿独角兽，机器人开年爆了！",
+        "digest": "千寻智能与智平方。",
+        "link": "https://mp.weixin.qq.com/s/C0BqPf8LryMu18jMtaxIYQ",
+        "create_time": 1771954496
+      },
+      {
+        "title": "复工前3天，你的核心不是干活，而是不出错、不背锅、不揽活",
+        "digest": "别再被复工收心指南PUA了。长假回来，职场正确的姿势是：先摸鱼3天。",
+        "link": "https://mp.weixin.qq.com/s/r__B6rj7jv0MzHTlHhjuwQ",
+        "create_time": 1771954496
+      },
+      {
+        "title": "段永平，重仓英伟达",
+        "digest": "这场关于未来的赌注，他已经悄然摆上了牌桌。",
+        "link": "https://mp.weixin.qq.com/s/w-GKoxEHmmYpF4NUIFN_ig",
+        "create_time": 1771922692
+      },
+      {
+        "title": "不迷信的人，怎样正确迎财神？",
+        "digest": "初五的鞭炮声此起彼伏，朋友圈里满是“财神爷快到碗里来”的祈愿。这是一个有趣的集体仪式——人们在用最传统的方式，表达着最现代的渴望。",
+        "link": "https://mp.weixin.qq.com/s/7THCefDE-TIEX85sj49BpQ",
+        "create_time": 1771922692
+      },
+      {
+        "title": "阿联酋“人工智能一哥”与中东资本",
+        "digest": "资本的流向折射出当下国际科技格局中的复杂关系。",
+        "link": "https://mp.weixin.qq.com/s/L-AELMAYpb9RY-nvkgZ6ow",
+        "create_time": 1771820396
+      },
+      {
+        "title": "奥迪，只卖10万了",
+        "digest": "崩盘，不是一夜之间。",
+        "link": "https://mp.weixin.qq.com/s/3Q5Ltg0AAmF3AbpuTiYdDQ",
+        "create_time": 1771820396
+      },
+      {
+        "title": "AI正在改变营销的底层逻辑：入口、内容、生态、触点都被重构",
+        "digest": "当大多数人还在研究“AI文案怎么写”的时候，在技术层，AI已经重构营销的底层逻辑了。2026年春节，一场特殊的营销战在奶茶店打响。",
+        "link": "https://mp.weixin.qq.com/s/8cZ9k-hnOy2jz-MZMnPvWQ",
+        "create_time": 1771704680
+      },
+      {
+        "title": "免签国这么多，中产还够用吗？",
+        "digest": "旅行的意义",
+        "link": "https://mp.weixin.qq.com/s/-f-8RDZCzD2ZM6t4wB845w",
+        "create_time": 1771704680
+      },
+      {
+        "title": "机器人为什么又再上春晚？这是AI在物理世界的路考",
+        "digest": "实话讲，我其实并不看春晚的，只当背景音，打开电视只是为了有点过年仪式感。我也是后知后觉，花了半小时把今年春晚的机器人节目翻出来看看，才写下这篇文章。不是为了看热闹，是为了看清楚一件事",
+        "link": "https://mp.weixin.qq.com/s/XuFvzAuMNHW7TSt6Wlz2Qw",
+        "create_time": 1771655689
+      },
+      {
+        "title": "大年初五咋去哪都有一亿人在排队？不想走亲戚的打工人挤疯了也要去「新中式乐园」找年味",
+        "digest": "初五祝您发大财！",
+        "link": "https://mp.weixin.qq.com/s/dOjuTdh7ejbtOIpt4Iwf3Q",
+        "create_time": 1771655689
+      },
+      {
+        "title": "“自动赚钱神器”火了，但被吹得过了",
+        "digest": "",
+        "link": "https://mp.weixin.qq.com/s/aI1RiCMxun58nailj-WD8A",
+        "create_time": 1771493171
+      },
+      {
+        "title": "别了，9块9的咖啡自由",
+        "digest": "库迪踩下刹车，一个时代的商业逻辑变了。",
+        "link": "https://mp.weixin.qq.com/s/L2Dg5ynOC4I8HXSSfrT2EQ",
+        "create_time": 1771493171
+      },
+      {
+        "title": "第一届被AI“霸占”的春晚，终于来了",
+        "digest": "",
+        "link": "https://mp.weixin.qq.com/s/cUxKyW4BrYLweFdcdtMong",
+        "create_time": 1771493117
+      },
+      {
+        "title": "开年狂甩两“王炸”，张一鸣在下一盘大棋",
+        "digest": "海内外科技巨头，为AI疯狂“烧钱”。",
+        "link": "https://mp.weixin.qq.com/s/IISYNFssSytbQA6mhpZTCw",
+        "create_time": 1771493117
+      },
+      {
+        "title": "史上最“硬”春晚，这届AI厂商年会谁赢了？",
+        "digest": "谁还在牌桌上，谁明年还能打？",
+        "link": "https://mp.weixin.qq.com/s/NvaC3blwKHirda9SXv-G7Q",
+        "create_time": 1771353011
+      },
+      {
+        "title": "春晚广告位争夺战：四十年国民记忆与商业暗流",
+        "digest": "一部“中国产业进化史”",
+        "link": "https://mp.weixin.qq.com/s/SmPiXPmx8zeDNxcVksUNDA",
+        "create_time": 1771353011
+      },
+      {
+        "title": "从“字节跳动”到“视觉舞蹈”，人类将陷入精神幻境",
+        "digest": "“视觉抖动”只是疲劳了人的手眼；“视觉舞蹈”则会麻醉人的灵魂。",
+        "link": "https://mp.weixin.qq.com/s/UexvkP35887T_1I6ZLuo5Q",
+        "create_time": 1771333244
+      },
+      {
+        "title": "告别千元时代，空调企业集体涨价",
+        "digest": "降价为了卖出去，涨价为了活下去",
+        "link": "https://mp.weixin.qq.com/s/3A3JaOWDyRd0Ln1DdGPRAg",
+        "create_time": 1771333244
+      }
+    ]
+  },
+  "机器之心": {
+    "fakeid": "MzA3MzI4MjgzMw==",
+    "articles": [
+      {
+        "title": "马斯克：Grok今日归来！",
+        "digest": "还挺会炒股的。",
+        "link": "https://mp.weixin.qq.com/s/VFYbX07o6TNp5c3f9T3JDg",
+        "create_time": 1772078036
+      },
+      {
+        "title": "ICLR 2026 | LightMem：把大模型「长期记忆」的成本打下来",
+        "digest": "一个在 “效果” 和 “效率” 之间更平衡的记忆系统，在不牺牲准确率的前提下，把 token、API 调用次数和运行时延降下来。",
+        "link": "https://mp.weixin.qq.com/s/N9mFtPYc6JDbH4TB1siBxA",
+        "create_time": 1772078036
+      },
+      {
+        "title": "遭谷歌制裁，OpenClaw创始人怒怼：Anthropic会先打招呼，你们直接封禁",
+        "digest": "OpenClaw创始人讲述该项目从无到有的历程。",
+        "link": "https://mp.weixin.qq.com/s/fAyMyfGxX5UocuP8iDb3Mw",
+        "create_time": 1772013638
+      },
+      {
+        "title": "ICLR 2026 | 把视频扩散模型压到4bit，还能接近满血效果？ QVGen让「超低比特视频生成量化」真正可用",
+        "digest": "3 bit 指标也在可用区间。",
+        "link": "https://mp.weixin.qq.com/s/MwFHbKGSmrPEYQgZz90m4g",
+        "create_time": 1772013638
+      },
+      {
+        "title": "只要1100美元tokens，一周重写 Next.js！",
+        "digest": "是真的。",
+        "link": "https://mp.weixin.qq.com/s/HYbyPZGqCWJcsLjSry21iw",
+        "create_time": 1772007853
+      },
+      {
+        "title": "消费级显卡可跑！刚刚，阿里Qwen3.5又开源3款新模型",
+        "digest": "千问3.5开源三连发，性能媲美GPT-5。",
+        "link": "https://mp.weixin.qq.com/s/LqaffWb3kV6W0iu2YRxfNQ",
+        "create_time": 1772007853
+      },
+      {
+        "title": "大语言模型真的会「推理」吗？一项系统性研究梳理 LLM 的结构性推理失败",
+        "digest": "错误究竟是偶然的波动，还是揭示出更深层次的结构性缺陷？",
+        "link": "https://mp.weixin.qq.com/s/F0_ofsFb0GzB-sRKZGP_6Q",
+        "create_time": 1772007853
+      },
+      {
+        "title": "AI能写COBOL代码，砸崩IBM股价，单日蒸发310亿美元，创26年最惨纪录",
+        "digest": "Anthropic一篇博客，砸崩IBM股价。",
+        "link": "https://mp.weixin.qq.com/s/jF9oDA9jJxsVmtxgy1g6PA",
+        "create_time": 1771990683
+      },
+      {
+        "title": "刚上完春晚，宇树新品机器狗就亮相了",
+        "digest": "雨中负重长跑。",
+        "link": "https://mp.weixin.qq.com/s/-1V-7h-vHjYOab224te0Dg",
+        "create_time": 1771990683
+      },
+      {
+        "title": "ICLR2026 Oral | 当情感识别不再是分类题：EmotionThinker 让 SpeechLLM 学会“解释情绪”",
+        "digest": "研究团队提出了首个面向可解释情感推理的强化学习框架，尝试将 SER 从 “分类任务” 提升为 “多模态证据驱动的推理任务”。",
+        "link": "https://mp.weixin.qq.com/s/JTUBumkv3aF9vU3Sb6z2mQ",
+        "create_time": 1771990683
+      },
+      {
+        "title": "微软研究登上Nature：把人类文明刻在玻璃里保存一万年",
+        "digest": "玻璃恒久远，数据永流传。",
+        "link": "https://mp.weixin.qq.com/s/ns5BbOjc6ulOHmfNl4EQwA",
+        "create_time": 1771918202
+      },
+      {
+        "title": "又快又省？仅5%参数、训练快4倍！ArcFlow用「非线性」魔法实现FLUX/Qwen推理40倍加速",
+        "digest": "学会 “漂移”，而不是把路修直。",
+        "link": "https://mp.weixin.qq.com/s/jY99699wnoGLDFNZERQGLQ",
+        "create_time": 1771918202
+      },
+      {
+        "title": "全网围观：Meta超级智能安全总监，被OpenClaw删光了邮件",
+        "digest": "「我对 AI 太自信了」",
+        "link": "https://mp.weixin.qq.com/s/AcYwwbJYH7sJUtWZha4mAg",
+        "create_time": 1771913278
+      },
+      {
+        "title": "多模态DeepResearch，成了！",
+        "digest": "港中文MMLab、中科大联合小红书提出Vision-DeepResearch。",
+        "link": "https://mp.weixin.qq.com/s/E3chyoaLVtaMI1MAL6zAhA",
+        "create_time": 1771913278
+      },
+      {
+        "title": "228小时狂飙100篇论文、烧光114亿Token：FARS杀疯了",
+        "digest": "新玩家已入场，人类你怕了吗？",
+        "link": "https://mp.weixin.qq.com/s/gT6sN0a0Wir1Yh1JHlieOQ",
+        "create_time": 1771906066
+      },
+      {
+        "title": "千寻智能完成近20亿融资，顶级资本天团联合押注，估值强势破百亿",
+        "digest": "强大的融资天团。",
+        "link": "https://mp.weixin.qq.com/s/FuspwACHahTfYUVqed6zSw",
+        "create_time": 1771906066
+      },
+      {
+        "title": "DeepMind：智能体越多越乱，Agent天花板出现了？",
+        "digest": "该调整思路了？",
+        "link": "https://mp.weixin.qq.com/s/G3KeHlDCk4C8ytB43LofRA",
+        "create_time": 1771906066
+      },
+      {
+        "title": "AI模型烧掉的Token，对应多少GDP？AI的经济贡献现在有数了",
+        "digest": "从经济生产力的角度评估AI模型。",
+        "link": "https://mp.weixin.qq.com/s/QWpPtAfmr-gj96AHSVWuIQ",
+        "create_time": 1771843913
+      },
+      {
+        "title": "项目陷入停滞、算力明争暗斗，5000亿美元的「星际之门」何去何从？",
+        "digest": "从前途远大走向一地鸡毛？",
+        "link": "https://mp.weixin.qq.com/s/yy_ZIegLKOsoBMpgHGvITQ",
+        "create_time": 1771817779
+      },
+      {
+        "title": "热度第一、Tokens周调用破3T，MiniMax这个春节杀疯了",
+        "digest": "那些压制已久的Agent需求，被MiniMax一个模型重新释放。",
+        "link": "https://mp.weixin.qq.com/s/u1Qc6TO02qQLwdtujh9VpA",
+        "create_time": 1771819304
+      }
+    ]
+  },
+  "虎嗅APP": {
+    "fakeid": "MTQzMjE1NjQwMQ==",
+    "articles": [
+      {
+        "title": "别卷大模型了！这16个行业藏着300个独角兽",
+        "digest": "这几天，全球科技圈的注意力，都被 Anthropic 的这波操作吸走了。先是指控中国AI“蒸馏”被群嘲，然后又把五角大楼惹毛了。\n&nbsp;\n如果你的注意力只被这些喧嚣所吸引，那你就要错过2026年AI领域最关键的信号了。\n&nbsp;\n在Anthropic“发疯”的这几天，它悄悄发布了一份《AI智能体实际使用情况报告》。它隐藏的真相，可能会彻底颠覆你对AI创业机会的认知。\n&nbsp;\n先甩几个扎心的数据：\n&nbsp;\n1.&nbsp; 软件工程独占了49.7%的智能体工具调用量\n&nbsp;\n这意味着什么？意味着我们引以为傲的AI革命，目前主要是程序员在用。\n&nbsp;\n2. 剩下的16个行业，是一片巨大的“无人区”\n&nbsp;\n其中医疗1%，法律0.9%，教育1.8%，没有一个超过9%，相当于还是一片空白。\n&nbsp;\n为什么只有程序员用得起劲？\n&nbsp;\n报告戳破了真相：容错率。​ 写错一段代码，最多回滚重来。但让AI处理医保报销、法律证据？一步错，可能就是一场官司。不敢用，才是最大的瓶颈。\n&nbsp;\nAI真的不可靠吗？报告否认了这一点。\n&nbsp;\n独立评估机构METR的测试显示，Claude 能独立干完人类5小时的活，但现实中，就算是最敢用 AI 的那群人，单次让它连续工作也才42分钟。\n&nbsp;\n能力有5小时，信任只有42分钟，YC CEO Garry Tan还给这种现象起了个名字叫“部署积压”。不是AI不行，是人类还没信任AI。\n&nbsp;\n现在你明白机会在哪了吗？\n&nbsp;\n答案就在那16个近乎空白的行业里。大家都知道这里有金矿，但因为“信任门槛”和“行业壁垒”，绝大部分人还在观望，甚至还没起跑。\n&nbsp;\n历史性的窗口已经打开，不用再挤破头扎堆红海，扎进你熟悉的垂直领域，你还有机会做你们行业第一个吃螃蟹的人。\n\n\n文案｜张洪雷\n编辑｜华思雨\n制图｜管若潼",
+        "link": "https://mp.weixin.qq.com/s/qKOEL6Usa2S3fRxkHNHM1Q",
+        "create_time": 1772074818
+      },
+      {
+        "title": "寒王不“性感”了",
+        "digest": "主动放弃战略制高点",
+        "link": "https://mp.weixin.qq.com/s/MMso1HrNVSZJXSgUxt0Wdw",
+        "create_time": 1772064704
+      },
+      {
+        "title": "早报｜英伟达财报超预期，同比增长73%；小米起诉自媒体账号实控人为李斌？知情人士回应；上海发布楼市“沪七条”；魅族手机或将退市",
+        "digest": "AI除夕夜辱骂用户，腾讯元宝致歉",
+        "link": "https://mp.weixin.qq.com/s/hkqj3Z-XwCDNWhLJPRL_lw",
+        "create_time": 1772064704
+      },
+      {
+        "title": "中国最神秘的亿万富豪，这次终于露面了",
+        "digest": "",
+        "link": "https://mp.weixin.qq.com/s/v5xVdlXBiHrLR_M1y6k8cg",
+        "create_time": 1772064704
+      },
+      {
+        "title": "荣耀（华为）系CEO，能补齐智界心智短板吗？",
+        "digest": "请一个荣耀系CEO容易，让整个组织华为化年轻化很难",
+        "link": "https://mp.weixin.qq.com/s/C_ZAGEFYwOHfgLymfDGPTA",
+        "create_time": 1772025450
+      },
+      {
+        "title": "押注AI一年后，Keep怎么样了？",
+        "digest": "正如其业绩预告所呈现的，盈利水平持续改善，未来持续造血可期。",
+        "link": "https://mp.weixin.qq.com/s/9kO_Ueuy_pYhat0TK4qGCA",
+        "create_time": 1772025450
+      },
+      {
+        "title": "存储的超级周期被质疑了？",
+        "digest": "资本做空闪迪，引发存储集体下跌。",
+        "link": "https://mp.weixin.qq.com/s/Mf4L_BxnyTYcWfC2yyzt3A",
+        "create_time": 1772025450
+      },
+      {
+        "title": "史上最长春节，多少中国游客滞留海外？",
+        "digest": "当9天长假遇上世界动荡",
+        "link": "https://mp.weixin.qq.com/s/7NubS79OPkxiQw-n7_UgJQ",
+        "create_time": 1772025450
+      },
+      {
+        "title": "中产陪读最火的国家，中国家长不买账了",
+        "digest": "“资产不到一千万，别来泰国陪读”",
+        "link": "https://mp.weixin.qq.com/s/3NUbGRjBqOfWEqE4KLs3ZQ",
+        "create_time": 1772014906
+      },
+      {
+        "title": "2026车市第一枪，谁打开了10万级的新想象？",
+        "digest": "「好而不贵」绝非偶然，而是十年全域自研的必然结果。",
+        "link": "https://mp.weixin.qq.com/s/f77FEOiF1RtM7Ie4jWfSow",
+        "create_time": 1772014906
+      },
+      {
+        "title": "谷歌连夜封禁，全行业集体堵截，OpenClaw到底动了谁的蛋糕？",
+        "digest": "谷歌打响了反OpenClaw的第一枪",
+        "link": "https://mp.weixin.qq.com/s/HS7_igrsznPVEMb_WL8xhA",
+        "create_time": 1772014906
+      },
+      {
+        "title": "酒店价格疯涨，打工人开始抢着住100元/晚的“医院版亚朵”",
+        "digest": "打工人花小钱办大事",
+        "link": "https://mp.weixin.qq.com/s/EFr1Yen_jLzBMx9JN93v5A",
+        "create_time": 1772014906
+      },
+      {
+        "title": "人类有充足的时间来规避“AI末日”",
+        "digest": "杰文斯悖论并未失效",
+        "link": "https://mp.weixin.qq.com/s/FCe0d_cl12K0Q0KcD_cTQw",
+        "create_time": 1771978772
+      },
+      {
+        "title": "早报｜中方回应特朗普3月31日将访华；刘强东斥资50亿元进军游艇业；36斤活羊烤完只剩6.9斤，官方通报；腾讯天美关闭蒙特利尔研发工作室",
+        "digest": "小米起诉自媒体侵权，获赔500万",
+        "link": "https://mp.weixin.qq.com/s/ozfdeHkdIw8JZeu3jBm-8w",
+        "create_time": 1771978772
+      },
+      {
+        "title": "1亿上春晚后，王兴兴们继续过苦日子",
+        "digest": "1亿上春晚，对不少机器人厂商而言，是阳谋，这笔账不能简单地计算ROI",
+        "link": "https://mp.weixin.qq.com/s/TtlO3qa8OGMrrEyv-7mRAw",
+        "create_time": 1771978772
+      },
+      {
+        "title": "2028年全球智力危机：当人类智力不再稀缺，中产的黄昏到来？",
+        "digest": "AI的成功可能导致经济不稳定",
+        "link": "https://mp.weixin.qq.com/s/HRWZugC_DaS7siOx3lShWg",
+        "create_time": 1771942228
+      },
+      {
+        "title": "这个春节，中国人把钱花在哪了",
+        "digest": "钱没少花，但花法变了",
+        "link": "https://mp.weixin.qq.com/s/L_Xf6u4mvZVePFRAJ16sHw",
+        "create_time": 1771942228
+      },
+      {
+        "title": "一夜蒸发310亿美元，Claude 新工具干翻IBM 摇钱树",
+        "digest": "IBM的护城河，现在被AI盯上了",
+        "link": "https://mp.weixin.qq.com/s/xshyzNPyk1N6PlCSw9LUWw",
+        "create_time": 1771942228
+      },
+      {
+        "title": "VC开始从豆包挖人了",
+        "digest": "就连在“人”这件事上，也开始上强度了",
+        "link": "https://mp.weixin.qq.com/s/DkJ3I_snECF8YJxB79F8gQ",
+        "create_time": 1771942228
+      },
+      {
+        "title": "指控中国AI“蒸馏”，Anthropic急了？",
+        "digest": "今天 Anthropic 在官网发文，公开点名DeepSeek、月之暗面、MiniMax三家中国公司通过2.4万个虚假账号，对 Claude 进行了总计超过1600万次“工业级蒸馏攻击”。\n&nbsp;\n所谓“蒸馏”，是AI领域常见技术，它原本是一种中性的标准优化手段，用于让小模型学习大模型能力，过去几年，学术界和工业界都在大量使用蒸馏来压缩模型体积、提升推理效率，相当于让学生抄优等生的作业来提高成绩。而且实际上，几乎整个AI行业本身，就是建立在“学习他人内容”之上的。\n&nbsp;\n不少AI圈人士下场吐槽 Anthropic 的双标行为，连马斯克也在第一时间转发调侃：“他们怎么敢偷Anthropic从人类程序员那偷来的东西？”\n&nbsp;\n那么AI到底什么算“学习”，什么算“盗用”？模型输出，是否属于可被学习的公共知识？\n&nbsp;\n从商业逻辑看，闭源模型公司希望建立类似软件授权的体系：能力可用，但不可学习。但从技术逻辑看，这几乎违背机器学习的自然规律——模型输出一旦公开，就天然成为新的训练数据。AI越成功，就越难阻止别人学习它。\n&nbsp;\n从法律角度看，美国最高法院范布伦案确立：如果访问者有权限，访问内容本身合法，即便出于不当目的，也不构成刑事层面的“未经授权访问”。换句话说，用真实账号合法调用API训练竞争模型，很难触犯《计算机欺诈和滥用法》。\n&nbsp;\n历史上的技术浪潮从不等待共识形成才前进，它们往往是在争议中扩散，在模仿中成熟。对于这次指控，你怎么看？评论区聊聊。\n&nbsp;\n&nbsp;\n文案、制图｜管若潼\n编辑｜华思雨",
+        "link": "https://mp.weixin.qq.com/s/P8IzpLUFJxUwVaRrC7ioFA",
+        "create_time": 1771935801
+      }
+    ]
+  },
+  "AI前线": {
+    "fakeid": "MzU1NDA4NjU2MA==",
+    "articles": [
+      {
+        "title": "曝DeepSeek新模型提前给华为等国内厂商“开绿灯”，V4 Lite 绝密参数外泄",
+        "digest": "整理｜华卫\n\n刚刚，有两位知情人士透露，去年凭借低成本模型震撼全球市场的DeepSeek，已提前向包括华为技术在内的国内供应商开放即将推出的旗舰模型DeepSeekV4的访问权限。\n \n消息称，DeepSeek并未向美国芯片制造商展示V4以进行性能优化，反而给包括华为在内的中国芯片厂商留出了数周时间，提前为其处理器做软件适配与性能优化，这打破了在重大模型更新之前进行性能优化的行业惯例。\n \n通常，大型模型在发布前会向英伟达、AMD等头部芯片厂商提供预览版，以确保软件能在主流硬件上高效运行。此前，DeepSeek也曾与英伟达技术团队保持密切合作。\n \n与此同时，另有消息称，DeepSeek V4 Lite 正处于密集测试阶段，至少已有一家推理服务商获得访问权限，但签署了严格的保密协议。目前已知的是，V4 Lite 的代号为“sealion-lite”，拥有 100 万个tokens的上下文窗口，效果显著优于网页端 / APP 端模型，并且是原生多模态架构。",
+        "link": "https://mp.weixin.qq.com/s/ng7mTK_H2vBW7egjJsXljw",
+        "create_time": 1772077395
+      },
+      {
+        "title": "阿里云 Coding Plan 集齐四大国产模型最强版本，开发者迎来“Token 自由”",
+        "digest": "每月一杯奶茶钱，爽用国产模型四大金刚",
+        "link": "https://mp.weixin.qq.com/s/c5i0gFPZS2kyN6hRMa4F2g",
+        "create_time": 1772012113
+      },
+      {
+        "title": "别再学做 App 了：Karpathy 预言 Agent 将淘汰 App Store，软件进入“用完即丢”时代",
+        "digest": "网友：“你奶奶会自己做APP吗？”",
+        "link": "https://mp.weixin.qq.com/s/l4PAWRI8gy2LNNqvX_7pCw",
+        "create_time": 1772012113
+      },
+      {
+        "title": "遭谷歌封禁，OpenClaw 创始人首次在 OpenAI 受访吐槽：Gemini 自信“100%能跑”，结果一试就崩",
+        "digest": "别只盯着封禁八卦了！来看OpenClaw爆火背后的真实故事",
+        "link": "https://mp.weixin.qq.com/s/uyEM7Ie6PjezaAo42FLunw",
+        "create_time": 1772000485
+      },
+      {
+        "title": "不怕你走，就怕你不用AI写代码！OpenAI Codex负责人亲口承认：内部已很少再打开IDE",
+        "digest": "OpenAI高管自曝：工程师已沦为AI“监工”，写代码是浪费时间",
+        "link": "https://mp.weixin.qq.com/s/zvHsInxShvjzZTzh4G2zSQ",
+        "create_time": 1771911628
+      },
+      {
+        "title": "AI 是否已经杀死了敏捷宣言",
+        "digest": "凯捷集团执行副总裁Steve Jones认为“AI已经杀死了敏捷宣言”，引发激烈讨论。",
+        "link": "https://mp.weixin.qq.com/s/kN0UNkrkNzGufXrCF7Q0Bw",
+        "create_time": 1771911628
+      },
+      {
+        "title": "DeepMind 运作模式曝光！暗示根本没输 OpenAI：员工20% 时间重启创新，保守巨头直接变 “实验狂”",
+        "digest": "当量子计算只需 5 分钟，谷歌 AI 的落地能力究竟走到了哪一步？",
+        "link": "https://mp.weixin.qq.com/s/Ync6eQ4mzwGsDD0Y95Okxw",
+        "create_time": 1771828074
+      },
+      {
+        "title": "印度一大学买宇树机器狗冒充自研，被扒后坦白；智谱致歉并宣布补偿，《镖人》用 Seedance 2.0 做片尾彩蛋；OpenAI 算力狂想退烧｜AI周报",
+        "digest": "点击查看本周产业动态>>>",
+        "link": "https://mp.weixin.qq.com/s/NQbfRWwMCZgNPYaO1Xqm0g",
+        "create_time": 1771741917
+      },
+      {
+        "title": "收购不成便带头封杀？！Meta痛下狠手，OpenClaw彻底失控：被拒后竟“人肉”网暴人类，实锤无人操控",
+        "digest": "现实世界中首例 AI 行为失控的案例出现了。",
+        "link": "https://mp.weixin.qq.com/s/plL1mUq913zuli1uhP0FpA",
+        "create_time": 1771651869
+      },
+      {
+        "title": "编码新王登基！Gemini 3.1 Pro 血洗 Claude 与 GPT，12 项基准测试第一！",
+        "digest": "在上周发布 Gemini 3 Deep Think 重大更新、面向科学研究与工程领域复杂问题之后，谷歌今日正式推出支撑这些突破的“核心智能”升级版本——Gemini 3.1 Pro。",
+        "link": "https://mp.weixin.qq.com/s/4ryYK7YAl-nK7rZm8omkuw",
+        "create_time": 1771554764
+      },
+      {
+        "title": "“软件工程师”头衔要没了？Claude Code之父YC访谈：一个月后不再用plan mode，多Agent开始自己组队干活",
+        "digest": "Claude Code代码六个月就过期了",
+        "link": "https://mp.weixin.qq.com/s/FonqAKISY7Zew6pQbkLWIg",
+        "create_time": 1771493262
+      },
+      {
+        "title": "OpenAI 一线开发现实观察：能同时盯住 10～20 个 Agent、跑小时级任务的人，正在把其他工程师远远甩开",
+        "digest": "OpenAI API 负责人最新访谈：工程师分层加速，产出差距拉到 70%，下一轮的分水岭是“会不会并行调度 Agent、跑小时级任务”",
+        "link": "https://mp.weixin.qq.com/s/MWDdOHSoWnPqyy7eY7SvSA",
+        "create_time": 1771402277
+      },
+      {
+        "title": "OpenAI 一线开发现实观察：能同时盯住 10～20 个 Agent、跑小时级任务的人，正在把其他工程师远远甩开",
+        "digest": "OpenAI API 负责人最新访谈：工程师分层加速，产出差距拉到 70%，下一轮的分水岭是“会不会并行调度 Agent、跑小时级任务”",
+        "link": "https://mp.weixin.qq.com/s/wnFWC67-8Lx45spg7kAn0g",
+        "create_time": 1771392379
+      },
+      {
+        "title": "Gemini灵魂人物、传奇工程师Jeff Dean最新访谈：未来人均50个虚拟实习生，用不上专家了！",
+        "digest": "模型变得越来越强，不再需要领域专家了？",
+        "link": "https://mp.weixin.qq.com/s/SMTdXyMVpvxrcNmXRcXqeA",
+        "create_time": 1771310181
+      },
+      {
+        "title": "阿里除夕开源“王炸”千问 3.5-Plus ，性能媲美Gemini 3 Pro、Claude 4.5 Opus，百万 Token 8毛钱",
+        "digest": "除夕当天，阿里巴巴低调但密集地抛出了一枚重磅“技术炸弹”——全新一代大模型 Qwen 3.5",
+        "link": "https://mp.weixin.qq.com/s/T0Ub8jltMJxwHbjtkJbvig",
+        "create_time": 1771238088
+      },
+      {
+        "title": "刚刚，OpenClaw “之父”正式加入 OpenAI，项目仍保持开源并成立基金会",
+        "digest": "OpenClaw 社区充满活力，令人着迷。",
+        "link": "https://mp.weixin.qq.com/s/GLXbGwpxeAgMG7yMkxuiKg",
+        "create_time": 1771197809
+      },
+      {
+        "title": "发春节红包的大厂被约谈；百度O计划曝光，文心助手MAU增4倍；影石CEO回应年会送出5套房｜AI周报",
+        "digest": "点击查看本周产业动态>>>",
+        "link": "https://mp.weixin.qq.com/s/uoBLKm7D-E91OAug-p8DWg",
+        "create_time": 1771129754
+      },
+      {
+        "title": "“软件比白领更先被 AI 击穿”！Anthropic CEO 最新改口，反讽马斯克危言耸听，两大佬隔空互掐",
+        "digest": "大佬们的“商战”有时也挺朴实无华，就是随时开怼。",
+        "link": "https://mp.weixin.qq.com/s/tNmO75EgcEhz1pCUA4mjSg",
+        "create_time": 1771076482
+      },
+      {
+        "title": "字节豆包2.0重磅发布！成本暴降一个数量级，Seed团队揭秘视频Agent竞争关键",
+        "digest": "今天，字节正式发布豆包大模型 2.0 系列。",
+        "link": "https://mp.weixin.qq.com/s/CWGmvWqd40F-9lbrJSdGtQ",
+        "create_time": 1771056895
+      },
+      {
+        "title": "Meta、OpenAI 争抢收购 OpenClaw！创始人艰难抉择：月入不到2万刀赔钱养项目，Offer拿到手软，对几十亿融资没兴趣",
+        "digest": "“AI会取代程序员，虽然惋惜，但是必然”",
+        "link": "https://mp.weixin.qq.com/s/zUo7n__19VUByYXytG9K6A",
+        "create_time": 1770969958
+      }
+    ]
+  },
+  "51CTO技术栈": {
+    "fakeid": "MjM5ODI5Njc2MA==",
+    "articles": [
+      {
+        "title": "Dario再发偏颇抹黑言论：中国模型都是为跑分优化的！曝：在ChatGPT发布之前因公司理念按下Claude1没发，丢掉C端市场；数据已不再是护城河",
+        "digest": "时不时就对中国模型大发偏颇言论的Dario，到底怎么想的",
+        "link": "https://mp.weixin.qq.com/s/YG_aF2RKCVrx7rcDG6aIBA",
+        "create_time": 1772007884
+      },
+      {
+        "title": "图灵奖得主、强化学习之父：AI模型本身其实很脆弱！现在的AI，只是局部智能！真正的下一阶段是经验时代！人类终将被AI继任！AI要去中心化",
+        "digest": "智能的本质不是“像人”，而是适应目标！",
+        "link": "https://mp.weixin.qq.com/s/DQg8gWEe2mNiPtX9Zi375A",
+        "create_time": 1771905005
+      },
+      {
+        "title": "OpenAI前华人工程师：个人贡献者正在永久消失！未来人类介入代码，反而被视为质量风险；AI替代不了人：软件成本归零也不会拉低超级碗门票",
+        "digest": "AI杀死了个人贡献者，软件开发者正在变成管理者，AI改变了钱包流向",
+        "link": "https://mp.weixin.qq.com/s/C0Q_QIbrIzV8qVE55kz9GQ",
+        "create_time": 1771684916
+      },
+      {
+        "title": "0基础、0代码，小白也能用的 OpenClaw 来了",
+        "digest": "小白也能玩转OpenClaw了",
+        "link": "https://mp.weixin.qq.com/s/BNVW4BWWUZoXXGM2x9Dnxg",
+        "create_time": 1771642677
+      },
+      {
+        "title": "CC之父：软件工程师头衔会消失，会被builder取代！公司应该给员工“无限Token”！自曝Claude模型训练轨迹；仅一年，Github代码4%系CC提交",
+        "digest": "CC之父的未来押注方向",
+        "link": "https://mp.weixin.qq.com/s/qSsnEpf-CcIEozeS5m_jjw",
+        "create_time": 1771633734
+      },
+      {
+        "title": "谷歌突发Gemini 3.1 Pro：刷爆全领域SOTA，堪称SVG王者，价格不变，清华姚顺宇参与：后续还会有更好模型！JeffDean：性能不止翻倍",
+        "digest": "谷歌凌晨刷爆全领域SOTA",
+        "link": "https://mp.weixin.qq.com/s/mIPTqi0lvV3HTNIIFyQ_lw",
+        "create_time": 1771558280
+      },
+      {
+        "title": "OpenAI开发者平台负责人：我们活在硅谷泡泡里！很多AI部署确实负回报！曝OpenAI内部吃自己的狗粮，模型会把脚手架吃掉！SaaS黄金时代降至",
+        "digest": "“我们活在硅谷泡泡里！”",
+        "link": "https://mp.weixin.qq.com/s/-4-gau9JFfdeoXhGh0nlSw",
+        "create_time": 1771478636
+      },
+      {
+        "title": "DeepMind CEO：后Gemini3时代，谷歌与自己的KPI！解决全部疾病已有可行路径：搜索和设计必须走计算机仿真环境！晚上10点开启第二轮工作",
+        "digest": "DeepMindCEO：实现AGI，需要解决所有疾病",
+        "link": "https://mp.weixin.qq.com/s/EZJjYOlB7AlYv8hqO8cJxA",
+        "create_time": 1770955469
+      },
+      {
+        "title": "谷歌深夜开大：Gemini3 超人升级！ARC-AGI直接跃迁，大幅超过人类！实验室变天：设计新型半导体材料，做同行评审，网友：要实现AGI的节奏",
+        "digest": "谷歌终于忍不住开大了！",
+        "link": "https://mp.weixin.qq.com/s/rNwFXHn6qcFsbP6f1tZPsw",
+        "create_time": 1770945419
+      },
+      {
+        "title": "李飞飞：使用世界模型，不用等5年！只靠LLM，不可能实现AGI！曝世界模型数据构建策略：真实+仿真数据的多模态混合叠加！",
+        "digest": "李飞飞：空间智能，究竟可以做什么？",
+        "link": "https://mp.weixin.qq.com/s/TmSefni5kSs_bfmi9azXtA",
+        "create_time": 1770902816
+      },
+      {
+        "title": "凌晨GLM-5炸场！世界开源模型第一名！模型训练大幅创新！实测：Agentic能力、前端细节逼近专业人士，可模拟手机OS，游戏秒运行！代际变化",
+        "digest": "GLM-5 终于来了！实测感受：代际变化",
+        "link": "https://mp.weixin.qq.com/s/D5uILOffeCL4DgZkfTwubw",
+        "create_time": 1770864210
+      },
+      {
+        "title": "93k星Github项目狠人！谷歌高级AI产品经理公开内部构建Agent心得：过去十年技能衡量标准已毫无价值！2026最优秀的开发者更像是导演",
+        "digest": "谷歌狠人公开AI产品构建心得：核心是拆解问题！",
+        "link": "https://mp.weixin.qq.com/s/L_uAB0NjfgIuvlDIrP4TYQ",
+        "create_time": 1770801800
+      },
+      {
+        "title": "菲尔兹奖得主陶哲轩有了新身份！下场AI for Science！最新专访：AI融入科研有很多错误路径，学术界不能只是等待！AI还谈不上真正的合著者",
+        "digest": "数学家陶哲轩下场做AI for Science：AI不应被视为单一技术，实际上它是数百种技术的集合。",
+        "link": "https://mp.weixin.qq.com/s/I0R2CCvlIr5OAIWx5DQNbA",
+        "create_time": 1770785090
+      },
+      {
+        "title": "阿里蔡崇信：AI不应是国与国的竞争！自曝阿里一开始并没有清晰的AI技术栈蓝图！曝跟马云创办阿里经历：种子轮路演全军覆没，回应阿里味",
+        "digest": "从18位创始人，到全栈AI的阿里，思考全在这里了。",
+        "link": "https://mp.weixin.qq.com/s/Kmm0EEHkPsz37jChPHHVIw",
+        "create_time": 1770722402
+      },
+      {
+        "title": "UML之父：Dario大错特错，根本不懂软件工程！软件工程不会死亡！软件已经迎来第三次黄金时代！业界回应：有了AI，SaaS只会更加繁荣！",
+        "digest": "IBM首席科学家、UML之父：软件工程不会死亡，Dario根本没搞清楚什么是真正的软件世界",
+        "link": "https://mp.weixin.qq.com/s/IsKRLGE4j2_3KEq2Wf5fxg",
+        "create_time": 1770697755
+      },
+      {
+        "title": "巨头继续投入6600亿美刀！黄仁勋回应：没有“暗GPU”，6年前卖的A100价格还在涨！给OpenAI两倍算力，收入能翻4倍！赞Meta：最会用AI",
+        "digest": "黄仁勋：AI基建跟铺路不同，需要七八年",
+        "link": "https://mp.weixin.qq.com/s/rlsYDGTlf6D7sPeCQKLMLg",
+        "create_time": 1770641141
+      },
+      {
+        "title": "“你大爷还是你大爷”——从软件工程视角看企业如何构建AI Agent的实践方法",
+        "digest": "",
+        "link": "https://mp.weixin.qq.com/s/Nq6DyyACBIW-nocZZ77uuA",
+        "create_time": 1770641141
+      },
+      {
+        "title": "马斯克“健力士”酒桌采访：三年内建成太空AI帝国！酒后吐真言：未来AI看人类就像人类看黑猩猩！未来在月球上造卫星；电力和内存最大担忧",
+        "digest": "马斯克酒后拆解自家的“太空AI帝国”构建计划",
+        "link": "https://mp.weixin.qq.com/s/788kTVR8SBk5p6Z2iY7zLw",
+        "create_time": 1770539450
+      },
+      {
+        "title": "Claude Opus4.6内部实用经验公开！16个智能体并行跑2周，中间几乎无人插手！曝 Vibe Coding过时了，以后是agent团队自主完成软件开发！",
+        "digest": "Agent团队已经接近现实！",
+        "link": "https://mp.weixin.qq.com/s/xmH-KNAKx_9LWaIqOrW1fA",
+        "create_time": 1770365618
+      },
+      {
+        "title": "大模型风向变了！CC之父：Opus4.6是我们最好的模型！为长时程Agent而生！实测玩疯了：一击必杀！超级可玩，连人物建模都更逼真了！",
+        "digest": "凌晨2点，硅谷的两家AI龙头公司，又来一波火拼！",
+        "link": "https://mp.weixin.qq.com/s/L73_m6hzEF4sV5M3l2Zcjg",
+        "create_time": 1770353247
+      }
+    ]
+  },
+  "孔某人的低维认知": {
+    "fakeid": "Mzk0MDU2OTk1Ng==",
+    "articles": [
+      {
+        "title": "播客推荐 | AI 生成代码“垃圾化”：风险，还是新的万亿机会？",
+        "digest": "Elad Gil: 我们刚经历了一个月的bullshit hype",
+        "link": "https://mp.weixin.qq.com/s/xqhKK-Su8k6sGopwch40xg",
+        "create_time": 1772076376
+      },
+      {
+        "title": "谈2026Q1的 AI Coding质量 与 Review",
+        "digest": "AI Coding确实需要正经的Review，否则会更快的导致代码腐败。",
+        "link": "https://mp.weixin.qq.com/s/s4EhjJh1ebP8qUq-vFUjSQ",
+        "create_time": 1771999226
+      },
+      {
+        "title": "展望后Coding Agent时代的软件生态",
+        "digest": "SaaS还不会死，软件不会都变成一次性，重复造轮子也仍然不是美德。",
+        "link": "https://mp.weixin.qq.com/s/7pTKZ9SasXKQJj53JgbHrQ",
+        "create_time": 1771748601
+      },
+      {
+        "title": "播客 | Dario Amodei：我们正接近指数式增长的尾声",
+        "digest": "Dario Amodei仍然跟Sam Altman一样乐观。",
+        "link": "https://mp.weixin.qq.com/s/h2yJl5_mnxqDVF7g33AF-Q",
+        "create_time": 1771037329
+      },
+      {
+        "title": "互联网时代的东西过时了嘛？过时了哪些？",
+        "digest": "我的逐条评论",
+        "link": "https://mp.weixin.qq.com/s/zvuwzftbJAAsAw6kF7KSxA",
+        "create_time": 1770706074
+      },
+      {
+        "title": "谈Seedance 2.0的一些启示",
+        "digest": "又有一帮人感觉饭碗被砸了，这个的频率没有那么高。",
+        "link": "https://mp.weixin.qq.com/s/_7eDN0LDdDTfv_UmEkVHfg",
+        "create_time": 1770650965
+      },
+      {
+        "title": "报告推荐 | Reality Check: Being an RL Theorist in 2025 | NeurIPS 2025",
+        "digest": "当你说这是一个 RL 问题时，你应该带着像说‘这是一个 NP-hard 问题’时同样的兴奋感（和觉悟）",
+        "link": "https://mp.weixin.qq.com/s/YIyaWuM98kwoboTNs-mz0w",
+        "create_time": 1770383694
+      },
+      {
+        "title": "尝试组建 创业者孵化器虚拟线下交流室",
+        "digest": "做这个社群是希望证明这个模式是可以存在的。",
+        "link": "https://mp.weixin.qq.com/s/gAuGLgaDKM48dQG9IABpDQ",
+        "create_time": 1770356557
+      },
+      {
+        "title": "GenAI native的个性化阅读2：为自己生成一本数学书",
+        "digest": "使用Claude Code给自己生成一本数学书",
+        "link": "https://mp.weixin.qq.com/s/lXjJZ2PN8T26egd7mzQCtQ",
+        "create_time": 1770307417
+      },
+      {
+        "title": "报告推荐 | 推理模型的思考过程是否真的提供了其思维的可解释窗口 | NeurIPS 2025",
+        "digest": "推理模型的思考过程其实不是在思考，而是在做Prompt增强。",
+        "link": "https://mp.weixin.qq.com/s/MvaL-GVQQ6W2L0s06xnI1Q",
+        "create_time": 1770221358
+      },
+      {
+        "title": "我们还能嘲讽“意识决定物质”嘛？",
+        "digest": "GenAI让我们变得更唯心了么？",
+        "link": "https://mp.weixin.qq.com/s/GUBk1_JD-atBDetrYwCUEA",
+        "create_time": 1770177596
+      },
+      {
+        "title": "报告推荐 | 揭秘深度：深度神经网络学习的基本原理 | NeurIPS 2025",
+        "digest": "在深度神经网络中，训练过程是多模式共同训练并赢者通吃的。",
+        "link": "https://mp.weixin.qq.com/s/vTtTK_DtvmA_9612XNz_rA",
+        "create_time": 1770001352
+      },
+      {
+        "title": "多模态生成Agent 需要 多模态理解能力更好的大模型",
+        "digest": "高分不一定没有问题",
+        "link": "https://mp.weixin.qq.com/s/jGbabUuOE_pUr4HYjWJXAg",
+        "create_time": 1769570110
+      },
+      {
+        "title": "漫谈我对音视频类内容的消费方式",
+        "digest": "我转发的播客摘要小卡片是怎么来的",
+        "link": "https://mp.weixin.qq.com/s/L7d3iUyMb08wpQCEY2rbYw",
+        "create_time": 1769404772
+      },
+      {
+        "title": "产品经理的认知体系开始出现裂纹：可以自动响应用户定制需求的软件",
+        "digest": "感觉会是一个争论很多的观点。",
+        "link": "https://mp.weixin.qq.com/s/6AVwx0DZM62U9w2QDpDyMQ",
+        "create_time": 1768984492
+      },
+      {
+        "title": "LLM时代的自用记账App开发实践",
+        "digest": "自用工具优化报告",
+        "link": "https://mp.weixin.qq.com/s/ih41RFrZ-ju6fQCDauN5sw",
+        "create_time": 1768807540
+      },
+      {
+        "title": "展望2026年LLM新架构（的一角）",
+        "digest": "分离知识和能力",
+        "link": "https://mp.weixin.qq.com/s/t5_dtnEw5OUGgY5zLlOYmA",
+        "create_time": 1768702117
+      },
+      {
+        "title": "转一个讽刺企业AI转型大跃进的段子",
+        "digest": "这只是一个段子，但应该可以引起一些反思。",
+        "link": "https://mp.weixin.qq.com/s/k0odygrjywn9-kiOCiMVVw",
+        "create_time": 1768581199
+      },
+      {
+        "title": "LLM终于在Tokenizer上取得进展，谈DeepSeek的2篇论文",
+        "digest": "重新思考tokenizer",
+        "link": "https://mp.weixin.qq.com/s/gdaVX0RxJ-C0rS3bv_-Quw",
+        "create_time": 1768274867
+      },
+      {
+        "title": "AI孵化的新产品不断出现，传统全栈工程师开始变得稀缺",
+        "digest": "GenAI重新“赋能”了传统研发岗位",
+        "link": "https://mp.weixin.qq.com/s/oc32O76X-5Of4PQS5AsxZg",
+        "create_time": 1768101502
+      }
+    ]
+  }
+}

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 日报</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card: #fff;
+    --text: #1a1a1a;
+    --muted: #666;
+    --border: #e5e5e5;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --badge-bg: #f0f0f0;
+    --badge-text: #444;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111;
+      --card: #1a1a1a;
+      --text: #e5e5e5;
+      --muted: #999;
+      --border: #333;
+      --accent: #60a5fa;
+      --accent-light: #1e293b;
+      --badge-bg: #2a2a2a;
+      --badge-text: #ccc;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    display: flex;
+    min-height: 100vh;
+  }
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 220px;
+    min-width: 220px;
+    border-right: 1px solid var(--border);
+    background: var(--card);
+    padding: 20px 0;
+    overflow-y: auto;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .sidebar h1 {
+    font-size: 18px;
+    padding: 0 16px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .sidebar .date-list { list-style: none; }
+  .sidebar .date-list li {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--muted);
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .sidebar .date-list li:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .sidebar .date-list li.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 600;
+    border-left-color: var(--accent);
+  }
+  .sidebar .date-list li .weekday {
+    font-size: 12px;
+    margin-left: 4px;
+    opacity: 0.6;
+  }
+  /* ── Main ── */
+  .main {
+    flex: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+  .main .loading {
+    text-align: center;
+    color: var(--muted);
+    padding: 80px 0;
+    font-size: 15px;
+  }
+  .main .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 80px 0;
+  }
+  /* ── Digest Content ── */
+  .digest h1 { font-size: 24px; margin-bottom: 8px; }
+  .digest h2 { font-size: 18px; margin: 28px 0 12px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  .digest blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 8px 16px;
+    margin: 8px 0;
+    color: var(--muted);
+    background: var(--accent-light);
+    border-radius: 0 6px 6px 0;
+    font-size: 14px;
+  }
+  .digest a { color: var(--accent); text-decoration: none; }
+  .digest a:hover { text-decoration: underline; }
+  /* details/summary */
+  .digest details {
+    margin: 8px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .digest details summary {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1.5;
+    background: var(--card);
+    list-style: none;
+  }
+  .digest details summary::-webkit-details-marker { display: none; }
+  .digest details summary::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 8px;
+    transition: transform 0.2s;
+    color: var(--muted);
+  }
+  .digest details[open] summary::before { transform: rotate(90deg); }
+  .digest details summary:hover { background: var(--accent-light); }
+  .digest details > :not(summary) { padding: 0 16px; }
+  .digest details > p:last-child { padding-bottom: 12px; }
+  /* code badges */
+  .digest code {
+    background: var(--badge-bg);
+    color: var(--badge-text);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .digest summary b { color: var(--text); }
+  /* tables */
+  .digest table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin: 12px 0;
+  }
+  .digest th, .digest td {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  .digest th { background: var(--badge-bg); font-weight: 600; }
+  .digest tr:hover td { background: var(--accent-light); }
+  /* list */
+  .digest ul, .digest ol { padding-left: 20px; margin: 6px 0; }
+  .digest li { margin: 4px 0; font-size: 14px; }
+  .digest hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .digest p { margin: 8px 0; }
+  .digest strong { color: var(--text); }
+  /* ── Mobile ── */
+  .mobile-header {
+    display: none;
+    padding: 12px 16px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .mobile-header h1 { font-size: 16px; display: inline; }
+  .mobile-header select {
+    float: right;
+    font-size: 14px;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+  }
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    .sidebar { display: none; }
+    .mobile-header { display: flex; align-items: center; justify-content: space-between; }
+    .main { padding: 16px; }
+    .digest h1 { font-size: 20px; }
+    .digest details summary { font-size: 14px; padding: 10px 12px; }
+    .digest table { font-size: 12px; }
+    .digest th, .digest td { padding: 6px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <h1>AI 日报</h1>
+  <ul class="date-list" id="dateList"></ul>
+</aside>
+
+<div class="mobile-header">
+  <h1>AI 日报</h1>
+  <select id="datePicker"></select>
+</div>
+
+<main class="main">
+  <div id="content" class="loading">加载中...</div>
+</main>
+
+<script>
+(function() {
+  const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
+  let dates = [];
+
+  // Configure marked
+  marked.setOptions({ breaks: true, gfm: true });
+
+  // Custom renderer to make links open in new tab
+  const renderer = new marked.Renderer();
+  renderer.link = function(href, title, text) {
+    // marked v5+ passes object; v4 passes args
+    if (typeof href === 'object') {
+      const token = href;
+      return `<a href="${token.href}" target="_blank" rel="noopener">${token.text}</a>`;
+    }
+    return `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
+  };
+  marked.setOptions({ renderer: renderer });
+
+  function getWeekday(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return WEEKDAYS[d.getDay()];
+  }
+
+  function currentDate() {
+    return location.hash.slice(1) || (dates.length ? dates[0].date : '');
+  }
+
+  function renderDateList() {
+    const list = document.getElementById('dateList');
+    const picker = document.getElementById('datePicker');
+    const active = currentDate();
+
+    list.innerHTML = dates.map(d => {
+      const wd = getWeekday(d.date);
+      const cls = d.date === active ? ' class="active"' : '';
+      return `<li${cls} data-date="${d.date}">${d.date}<span class="weekday">周${wd}</span></li>`;
+    }).join('');
+
+    list.querySelectorAll('li').forEach(li => {
+      li.addEventListener('click', () => {
+        location.hash = li.dataset.date;
+      });
+    });
+
+    picker.innerHTML = dates.map(d => {
+      const wd = getWeekday(d.date);
+      const sel = d.date === active ? ' selected' : '';
+      return `<option value="${d.date}"${sel}>${d.date} 周${wd}</option>`;
+    }).join('');
+
+    picker.onchange = () => { location.hash = picker.value; };
+  }
+
+  async function loadDigest(date) {
+    const el = document.getElementById('content');
+    if (!date) {
+      el.className = 'empty';
+      el.innerHTML = '暂无日报数据';
+      return;
+    }
+
+    el.className = 'loading';
+    el.innerHTML = '加载中...';
+
+    try {
+      const res = await fetch(`digests/${date}.md`);
+      if (!res.ok) throw new Error(res.status);
+      const md = await res.text();
+      el.className = 'digest';
+      el.innerHTML = marked.parse(md);
+    } catch (e) {
+      el.className = 'empty';
+      el.innerHTML = `未找到 ${date} 的日报`;
+    }
+  }
+
+  async function init() {
+    try {
+      const res = await fetch('index.json');
+      dates = await res.json();
+    } catch {
+      document.getElementById('content').className = 'empty';
+      document.getElementById('content').innerHTML = '无法加载日报列表';
+      return;
+    }
+
+    if (!location.hash && dates.length) {
+      location.hash = dates[0].date;
+    }
+
+    renderDateList();
+    loadDigest(currentDate());
+
+    window.addEventListener('hashchange', () => {
+      renderDateList();
+      loadDigest(currentDate());
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{"type": "task", "context": "auto_import", "action": "检查最近 24h 文章", "result": "无新文章", "timestamp": "2026-02-18T16:28:56.281904", "project": "knowledgebase"}
+{"type": "task", "context": "auto_import", "action": "检查最近 8760h 文章", "result": "无新文章", "timestamp": "2026-02-18T16:29:08.237767", "project": "knowledgebase"}
+{"type": "task", "context": "auto_import", "action": "检查最近 24h 文章", "result": "无新文章", "timestamp": "2026-02-18T16:31:54.494800", "project": "knowledgebase"}
+{"type": "task", "context": "ai_digest", "action": "生成 AI 日报 (24h)", "result": "全部 39 → AI 24 → 去重 24 → 合并 24 条", "timestamp": "2026-02-19T19:58:28.770074", "project": "knowledgebase"}
+{"type": "task", "context": "ai_digest", "action": "生成 AI 日报 (24h)", "result": "全部 37 → AI 23 → 去重 23 → 合并 21 条", "timestamp": "2026-02-20T14:18:13.205217", "project": "knowledgebase"}
+{"type": "task", "context": "ai_digest", "action": "生成 AI 日报 (24h)", "result": "全部 53 → AI 35 → 去重 35 → 合并 27 条", "timestamp": "2026-02-20T16:52:51.043015", "project": "knowledgebase"}
+{"type": "task", "context": "ai_digest", "action": "生成 AI 日报 (24h)", "result": "全部 51 → AI 33 → 去重 33 → 合并 27 条", "timestamp": "2026-02-20T16:55:56.500222", "project": "knowledgebase"}
