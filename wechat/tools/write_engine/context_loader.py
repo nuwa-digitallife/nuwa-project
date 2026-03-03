@@ -314,33 +314,43 @@ class ContextLoader:
 
         return "\n".join(result) if result else "（未找到竞品文章素材）"
 
-    def build_shared_context(self, topic_dir: Path, persona_name: str) -> str:
-        """构建所有 Pass 共享的上下文层。
+    def build_shared_context(self, topic_dir: Path, persona_name: str,
+                             pass_id: str = "full") -> str:
+        """构建按 Pass 分级的共享上下文。
 
-        包含：素材摘要 + 人设摘要 + 方法论核心 + 经验库最近10条。
-        总共约 6-7k chars。
+        Token 优化：不同 Pass 需要不同的上下文子集。
+        - "full" / Pass 1 / Pass 3: 完整（素材摘要 + 人设 + 方法论 + 经验）
+        - "factcheck" / Pass 2: 素材 + 铁律（不要人设/经验）
+        - "consensus" / Pass 3.5: 铁律（不要素材/经验/人设）
+        - "integrate" / Pass 4: 铁律 + 人设风格
+
+        总共 full ≈ 6-7k chars, consensus ≈ 2k chars。
         """
+        pass_id = str(pass_id)
         parts = []
 
-        # 素材摘要
-        materials_summary = self.load_materials_summary(topic_dir)
-        if materials_summary:
-            parts.append(f"## 素材摘要\n\n{materials_summary}")
+        # 素材摘要：只有 full/factcheck 需要
+        if pass_id in ("full", "1", "2", "3", "factcheck"):
+            materials_summary = self.load_materials_summary(topic_dir)
+            if materials_summary:
+                parts.append(f"## 素材摘要\n\n{materials_summary}")
 
-        # 人设摘要
-        persona_summary = self.load_persona_summary(persona_name)
-        if persona_summary:
-            parts.append(f"## 执笔人设摘要\n\n{persona_summary}")
+        # 人设摘要：full / integrate 需要
+        if pass_id in ("full", "1", "3", "4", "integrate"):
+            persona_summary = self.load_persona_summary(persona_name)
+            if persona_summary:
+                parts.append(f"## 执笔人设摘要\n\n{persona_summary}")
 
-        # 方法论核心
+        # 方法论核心（铁律）：所有 Pass 都需要
         methodology_core = self.load_methodology_core()
         if methodology_core:
             parts.append(f"## 方法论核心\n\n{methodology_core}")
 
-        # 经验库（最近10条）
-        experience = self.load_experience(max_entries=10)
-        if experience:
-            parts.append(f"## 经验库（最近10条）\n\n{experience}")
+        # 经验库：只有 full 需要
+        if pass_id in ("full", "1", "3"):
+            experience = self.load_experience(max_entries=10)
+            if experience:
+                parts.append(f"## 经验库（最近10条）\n\n{experience}")
 
         return "\n\n---\n\n".join(parts) if parts else ""
 
@@ -350,7 +360,7 @@ class ContextLoader:
                                 series_name: str = None) -> dict:
         """组装 Pass 1 写作Agent 所需的全部上下文。"""
         return {
-            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name),
+            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name, pass_id="1"),
             "PERSONA": self.load_persona(persona_name),
             "PERSONA_NAME": persona_name,
             "DATE": datetime.now().strftime("%Y-%m-%d"),
@@ -363,20 +373,25 @@ class ContextLoader:
                                 persona_name: str) -> dict:
         """组装 Pass 2 事实核查Agent 所需的上下文。"""
         return {
-            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name),
+            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name, pass_id="2"),
             "ARTICLE_DRAFT": article_draft,
             "MATERIALS": self.load_materials(topic_dir),
         }
 
     def assemble_pass3_context(self, topic_dir: Path, article_factchecked: str,
-                                persona_name: str, series_name: str = None) -> dict:
+                                persona_name: str, series_name: str = None,
+                                max_series_context_chars: int = 3000) -> dict:
         """组装 Pass 3 审视Agent 所需的上下文。"""
+        series_context = self.load_series_articles_summary(series_name, persona_name)
+        # Token 优化：限制 SERIES_CONTEXT 到 3K chars
+        if len(series_context) > max_series_context_chars:
+            series_context = series_context[:max_series_context_chars] + "\n\n[...系列上下文已截断...]"
         return {
-            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name),
+            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name, pass_id="3"),
             "ARTICLE_FACTCHECKED": article_factchecked,
             "PERSONA": self.load_persona(persona_name),
             "EXPERIENCE": self.load_experience(),
-            "SERIES_CONTEXT": self.load_series_articles_summary(series_name, persona_name),
+            "SERIES_CONTEXT": series_context,
             "COMPETITOR_ARTICLES": self.load_competitor_articles(topic_dir),
             "REVIEW_CHECKLIST": self.load_review_checklist(),
         }
@@ -387,7 +402,7 @@ class ContextLoader:
                                 persona_name: str) -> dict:
         """组装 Pass 4 整合Agent 所需的上下文。"""
         return {
-            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name),
+            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name, pass_id="4"),
             "ARTICLE_DRAFT": article_draft,
             "FACTCHECK_REPORT": factcheck_report,
             "REVIEW_REPORT": review_report,
@@ -402,7 +417,7 @@ class ContextLoader:
                                         persona_name: str) -> dict:
         """组装 Writing Agent 回应 review 的上下文。"""
         return {
-            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name),
+            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name, pass_id="consensus"),
             "REVIEW_REPORT": review_report,
             "ARTICLE_FACTCHECKED": article_factchecked,
             "CONSENSUS_DOC": consensus_doc,
@@ -414,11 +429,11 @@ class ContextLoader:
                                        persona_name: str) -> dict:
         """组装 Fact Agent 回应 review 的上下文。"""
         return {
-            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name),
+            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name, pass_id="consensus"),
             "REVIEW_REPORT": review_report,
             "ARTICLE_FACTCHECKED": article_factchecked,
             "CONSENSUS_DOC": consensus_doc,
-            "MATERIALS": self.load_materials(topic_dir),
+            "MATERIALS": self.load_materials_summary(topic_dir),  # Token 优化：只传素材摘要
         }
 
     def assemble_consensus_evaluate_context(self, topic_dir: Path, review_report: str,
@@ -427,7 +442,7 @@ class ContextLoader:
                                               persona_name: str) -> dict:
         """组装 Review Agent 评估所有回应的上下文。"""
         return {
-            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name),
+            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name, pass_id="consensus"),
             "REVIEW_REPORT": review_report,
             "ARTICLE_FACTCHECKED": article_factchecked,
             "CONSENSUS_DOC": consensus_doc,
@@ -437,7 +452,7 @@ class ContextLoader:
                                     consensus_doc: str, persona_name: str) -> dict:
         """组装 Writing Agent 按共识执行写作类修改的上下文。"""
         return {
-            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name),
+            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name, pass_id="consensus"),
             "ARTICLE_FACTCHECKED": article_factchecked,
             "CONSENSUS_DOC": consensus_doc,
             "PERSONA": self.load_persona(persona_name),
@@ -447,10 +462,10 @@ class ContextLoader:
                                          consensus_doc: str, persona_name: str) -> dict:
         """组装 Fact Agent 按共识执行事实类修改的上下文。"""
         return {
-            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name),
+            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name, pass_id="consensus"),
             "ARTICLE": article_after_write_revision,
             "CONSENSUS_DOC": consensus_doc,
-            "MATERIALS": self.load_materials(topic_dir),
+            "MATERIALS": self.load_materials_summary(topic_dir),  # Token 优化：只传素材摘要
         }
 
     def assemble_verification_context(self, article_before: str, article_after: str,
@@ -458,7 +473,7 @@ class ContextLoader:
                                         topic_dir: Path, persona_name: str) -> dict:
         """组装 Review Agent 验收的上下文。"""
         return {
-            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name),
+            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name, pass_id="consensus"),
             "ARTICLE_BEFORE": article_before,
             "ARTICLE_AFTER": article_after,
             "CONSENSUS_DOC": consensus_doc,
@@ -471,7 +486,7 @@ class ContextLoader:
                                          persona_name: str) -> dict:
         """组装 Pass 5a 证据硬度审计的上下文。"""
         return {
-            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name),
+            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name, pass_id="2"),
             "ARTICLE": article,
             "MATERIALS": self.load_materials(topic_dir),
         }
@@ -480,7 +495,7 @@ class ContextLoader:
                                           weakness: str, persona_name: str) -> dict:
         """组装 Pass 5b 定向调研的上下文。"""
         return {
-            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name),
+            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name, pass_id="2"),
             "ARTICLE": article,
             "WEAKNESS_REPORT": weakness,
             "MATERIALS_SUMMARY": self.load_materials_summary(topic_dir),
@@ -491,7 +506,7 @@ class ContextLoader:
                                          persona_name: str) -> dict:
         """组装 Pass 5c 定向重写的上下文。"""
         return {
-            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name),
+            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name, pass_id="consensus"),
             "ARTICLE": article,
             "WEAKNESS_REPORT": weakness,
             "TARGETED_RESEARCH": research,
@@ -502,7 +517,7 @@ class ContextLoader:
                                          curr: str, persona_name: str) -> dict:
         """组装 Pass 5d 版本对比的上下文。"""
         return {
-            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name),
+            "SHARED_CONTEXT": self.build_shared_context(topic_dir, persona_name, pass_id="consensus"),
             "ARTICLE_PREV": prev,
             "ARTICLE_CURR": curr,
         }

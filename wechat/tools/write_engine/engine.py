@@ -199,9 +199,15 @@ def fill_template(template: str, context: dict) -> str:
 
 # ── 限流重试助手 ──────────────────────────────────────
 
-def _is_rate_limited(stderr: str) -> bool:
-    """检查 stderr 是否包含限流/过载信号。"""
-    indicators = ["rate limit", "429", "overloaded", "too many requests"]
+def _is_rate_limited(stderr: str, returncode: int = 0) -> bool:
+    """检查是否应该重试（限流/过载/未知故障）。
+
+    空 stderr + 非零退出码 → 很可能是限流（claude CLI 不总是输出错误信息）。
+    """
+    if returncode != 0 and not stderr.strip():
+        return True  # 空 stderr + exit!=0 → 按限流处理，触发重试
+    indicators = ["rate limit", "429", "overloaded", "too many requests",
+                  "server error", "500", "502", "503"]
     stderr_lower = stderr.lower()
     return any(ind in stderr_lower for ind in indicators)
 
@@ -256,7 +262,7 @@ def run_claude_with_retry(cmd: list[str], prompt: str, timeout: int,
         result = _try_once()
         if result is None:
             return None
-        if result.returncode == 0 or not _is_rate_limited(result.stderr):
+        if result.returncode == 0 or not _is_rate_limited(result.stderr, result.returncode):
             return result
         if attempt < max_retries:
             _log.warning(f"限流等待 {wait_seconds}s... (重试 {attempt}/{max_retries})")
@@ -272,7 +278,7 @@ def run_claude_with_retry(cmd: list[str], prompt: str, timeout: int,
         result = _try_once()
         if result is None:
             return None
-        if result.returncode == 0 or not _is_rate_limited(result.stderr):
+        if result.returncode == 0 or not _is_rate_limited(result.stderr, result.returncode):
             return result
         if attempt < max_retries:
             _log.warning(f"冷却后重试 {wait_seconds}s... (重试 {attempt}/{max_retries})")
@@ -525,22 +531,59 @@ def _check_orphaned_recommendations(review_report: str, topic_dir: Path):
     )
 
 
+# ── CONSENSUS_DOC 精简助手 ────────────────────────────
+
+def _compress_consensus_doc(consensus_doc: str, latest_evaluate: str) -> str:
+    """将膨胀的 CONSENSUS_DOC 压缩为：未解决项 + 一段摘要。
+
+    避免 Round 2+ 传入完整历史（10K→30K→50K 指数膨胀）。
+    只保留：
+    1. 未解决项列表（⏳ 标记的条目）
+    2. 最后一轮评估的结论摘要（前 500 chars）
+    """
+    # 提取未解决项
+    unresolved = []
+    for line in consensus_doc.split("\n"):
+        if "⏳" in line:
+            unresolved.append(line.strip())
+
+    # 取最后一轮评估的开头作为摘要
+    summary = latest_evaluate[:500] if latest_evaluate else ""
+    if len(latest_evaluate) > 500:
+        summary += "\n[...评估摘要已截断...]"
+
+    parts = ["# 前轮协商摘要（精简版）\n"]
+    if unresolved:
+        parts.append("## 未解决项\n")
+        parts.extend(unresolved)
+    if summary:
+        parts.append(f"\n## 上轮评估摘要\n{summary}")
+
+    return "\n".join(parts)
+
+
 # ── Pass 3.5: 协商闭环 ──────────────────────────────
 
 def run_consensus_loop(ctx: ContextLoader, topic_dir: Path,
                        review_report: str, article_factchecked: str,
-                       persona: str, model: str) -> tuple[str, str]:
+                       persona: str, model: str,
+                       skip_fact: bool = False,
+                       max_rounds_override: int = None) -> tuple[str, str]:
     """
     Pass 3.5: 协商闭环。
 
     流程：
     1. Writing Agent 回应写作类优化点
-    2. Fact Agent 回应事实类优化点（如有）
+    2. Fact Agent 回应事实类优化点（如有，且 skip_fact=False）
     3. Review Agent 评估所有回应，形成共识
     4. 如果还有未解决项且未达上限，回到 1
     5. Writing Agent 按共识执行写作类修改
-    6. Fact Agent 按共识执行事实类修改（如有）
+    6. Fact Agent 按共识执行事实类修改（如有，且 skip_fact=False）
     7. Review Agent 验收
+
+    Args:
+        skip_fact: 如果 True，跳过 Fact Agent（当 Pass 2 已成功时，省 ~5-8K tokens）
+        max_rounds_override: 覆盖 config 中的 max_rounds（CLI --consensus-rounds）
 
     Returns:
         (consensus_doc, final_article): 共识文档 和 验收后的文章
@@ -549,19 +592,31 @@ def run_consensus_loop(ctx: ContextLoader, topic_dir: Path,
     log.info("Pass 3.5: 协商闭环")
     log.info("=" * 50)
 
-    max_rounds = CONSENSUS_CONFIG.get("max_rounds", 2)
+    max_rounds = max_rounds_override or CONSENSUS_CONFIG.get("max_rounds", 1)
     has_fact_issues = _has_type(review_report, "🔍") or _has_type(review_report, "🔀")
     has_write_issues = _has_type(review_report, "🖊️") or _has_type(review_report, "🔀")
+
+    # Token 优化：如果 Pass 2 事实核查已完成，共识阶段跳过 Fact Agent
+    if skip_fact and has_fact_issues:
+        log.info("  Pass 2 事实核查已完成 → 共识阶段跳过 Fact Agent（省 token）")
+        has_fact_issues = False
 
     if not has_write_issues and not has_fact_issues:
         log.info("Review 报告没有优化点，跳过协商")
         return "", article_factchecked
 
     consensus_doc = ""  # 累积协商记录
+    consensus_doc_full = ""  # 完整版（保存用）
+    latest_evaluate_text = ""  # 上轮评估文本（压缩用）
 
     # ── 协商轮次 ──
     for round_num in range(1, max_rounds + 1):
         log.info(f"── 协商第 {round_num}/{max_rounds} 轮 ──")
+
+        # Token 优化：Round 2+ 使用精简版 consensus_doc
+        if round_num > 1 and consensus_doc_full:
+            consensus_doc = _compress_consensus_doc(consensus_doc_full, latest_evaluate_text)
+            log.info(f"  共识文档精简: {len(consensus_doc_full)} → {len(consensus_doc)} chars")
 
         # Step 1: Writing Agent 回应
         if has_write_issues:
@@ -577,7 +632,9 @@ def run_consensus_loop(ctx: ContextLoader, topic_dir: Path,
             )
             parts = parse_delimited_output(write_response, ["WRITE_RESPONSE"])
             write_response_text = parts.get("WRITE_RESPONSE", write_response)
-            consensus_doc += f"\n\n## 第 {round_num} 轮 — Writing Agent 回应\n\n{write_response_text}"
+            round_entry = f"\n\n## 第 {round_num} 轮 — Writing Agent 回应\n\n{write_response_text}"
+            consensus_doc += round_entry
+            consensus_doc_full += round_entry
         else:
             log.info("  无写作类优化点，跳过 Writing Agent 回应")
 
@@ -595,7 +652,9 @@ def run_consensus_loop(ctx: ContextLoader, topic_dir: Path,
             )
             parts = parse_delimited_output(fact_response, ["FACT_RESPONSE"])
             fact_response_text = parts.get("FACT_RESPONSE", fact_response)
-            consensus_doc += f"\n\n## 第 {round_num} 轮 — Fact Agent 回应\n\n{fact_response_text}"
+            round_entry = f"\n\n## 第 {round_num} 轮 — Fact Agent 回应\n\n{fact_response_text}"
+            consensus_doc += round_entry
+            consensus_doc_full += round_entry
         else:
             log.info("  无事实类优化点，跳过 Fact Agent 回应")
 
@@ -612,7 +671,10 @@ def run_consensus_loop(ctx: ContextLoader, topic_dir: Path,
         )
         parts = parse_delimited_output(evaluate_output, ["CONSENSUS_UPDATE"])
         consensus_update = parts.get("CONSENSUS_UPDATE", evaluate_output)
-        consensus_doc += f"\n\n## 第 {round_num} 轮 — Review Agent 评估\n\n{consensus_update}"
+        latest_evaluate_text = consensus_update
+        round_entry = f"\n\n## 第 {round_num} 轮 — Review Agent 评估\n\n{consensus_update}"
+        consensus_doc += round_entry
+        consensus_doc_full += round_entry
 
         # 检查是否还有未解决项
         unresolved_count = consensus_update.count("⏳")
@@ -696,20 +758,20 @@ def run_consensus_loop(ctx: ContextLoader, topic_dir: Path,
     # 如果验收通过且有 VERIFIED_ARTICLE，用它；否则用 current_article
     final_article = verified_article if verified_article else current_article
 
-    # 追加验收结果到共识文档
-    consensus_doc += f"\n\n## 验收结果\n\n{verification}"
+    # 追加验收结果到共识文档（完整版）
+    consensus_doc_full += f"\n\n## 验收结果\n\n{verification}"
 
-    # 保存所有文件
-    (topic_dir / "consensus_doc.md").write_text(consensus_doc, encoding="utf-8")
+    # 保存所有文件（用完整版 consensus_doc_full，便于溯源）
+    (topic_dir / "consensus_doc.md").write_text(consensus_doc_full, encoding="utf-8")
     (topic_dir / "article_reviewed.md").write_text(final_article, encoding="utf-8")
 
     if verification:
         (topic_dir / "verification_report.md").write_text(verification, encoding="utf-8")
 
-    log.info(f"Pass 3.5 完成: consensus_doc={len(consensus_doc)} chars, "
+    log.info(f"Pass 3.5 完成: consensus_doc={len(consensus_doc_full)} chars, "
              f"final_article={len(final_article)} chars")
 
-    return consensus_doc, final_article
+    return consensus_doc_full, final_article
 
 
 # ── Pass 5: 迭代求导（证据硬化循环）──────────────────
@@ -1078,7 +1140,8 @@ def generate_cover_image(article_text: str, topic_dir: Path):
 
 def run_engine(topic_dir: Path, persona: str, series: str = None,
                model: str = DEFAULT_MODEL, start_pass: int = 1,
-               iterate: bool = False, max_iterations: int = None):
+               iterate: bool = False, max_iterations: int = None,
+               consensus_rounds: int = None):
     """
     执行完整写作引擎流程。
 
@@ -1095,7 +1158,8 @@ def run_engine(topic_dir: Path, persona: str, series: str = None,
     log.info(f"  系列: {series or '独立篇'}")
     log.info(f"  模型: {model}")
     log.info(f"  起始Pass: {start_pass}")
-    log.info(f"  协商轮次上限: {CONSENSUS_CONFIG.get('max_rounds', 2)}")
+    _max_rounds = consensus_rounds or CONSENSUS_CONFIG.get("max_rounds", 1)
+    log.info(f"  协商轮次上限: {_max_rounds}")
     if iterate:
         _max_iter = max_iterations or ITERATION_CONFIG.get("max_iterations", 2)
         log.info(f"  迭代求导: 开启 (最多 {_max_iter} 轮)")
@@ -1146,8 +1210,12 @@ def run_engine(topic_dir: Path, persona: str, series: str = None,
     # ── Pass 3.5: 协商闭环 ──
     consensus_doc = ""
     if start_pass <= 3:
+        # Token 优化：如果 Pass 2 事实核查成功，共识阶段跳过 Fact Agent
+        _skip_fact = bool(factcheck_report)
         consensus_doc, article_reviewed = run_consensus_loop(
-            ctx, topic_dir, review_report, article_factchecked, persona, model
+            ctx, topic_dir, review_report, article_factchecked, persona, model,
+            skip_fact=_skip_fact,
+            max_rounds_override=consensus_rounds,
         )
     else:
         # 断点续跑时读取已有文件
@@ -1255,6 +1323,8 @@ def main():
                         help="启用 Pass 5 迭代求导（证据硬化循环）")
     parser.add_argument("--max-iterations", type=int, default=None,
                         help="迭代最大轮次（默认从 topic_config.yaml 读取）")
+    parser.add_argument("--consensus-rounds", type=int, default=None,
+                        help="协商轮次上限（覆盖 topic_config.yaml，默认 1）")
 
     args = parser.parse_args()
     success = run_engine(
@@ -1265,6 +1335,7 @@ def main():
         start_pass=args.start_pass,
         iterate=args.iterate,
         max_iterations=args.max_iterations,
+        consensus_rounds=args.consensus_rounds,
     )
     sys.exit(0 if success else 1)
 

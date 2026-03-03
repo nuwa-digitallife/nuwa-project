@@ -116,12 +116,12 @@ models:
       4: 600             # 整合不需要搜索，给短超时
     # Pass 3.5 协商闭环各阶段 effort
     pass3b_effort:
-      write_respond: high    # Writing Agent 回应（需要深度思考辩护）
-      fact_respond: high     # Fact Agent 回应（需要搜索验证）
-      evaluate: high         # Review Agent 评估裁定
-      revise: high           # Writing Agent 执行修改
-      fact_revise: high      # Fact Agent 执行事实修改
-      verify: high           # Review Agent 验收
+      write_respond: medium  # Writing Agent 回应（共识评估不需最深推理）
+      fact_respond: medium   # Fact Agent 回应
+      evaluate: medium       # Review Agent 评估裁定
+      revise: medium         # Writing Agent 执行修改
+      fact_revise: medium    # Fact Agent 执行事实修改
+      verify: medium         # Review Agent 验收
     pass3b_tools:
       write_respond: "Read"
       fact_respond: "WebSearch,WebFetch,Read"
@@ -168,7 +168,7 @@ iteration:
 # 协商共识参数
 # ============================================================
 consensus:
-  max_rounds: 2              # 最多协商几轮（每轮 = 回应 + 评估）
+  max_rounds: 1              # 默认1轮（Round 2增量收益小但token翻倍）。用 --consensus-rounds 2 覆盖
   num_revision_entries: 2    # 预留（未来可限制单轮最大修改条数）
 
 # ============================================================
