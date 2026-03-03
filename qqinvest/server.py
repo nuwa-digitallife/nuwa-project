@@ -32,6 +32,7 @@ ROOT = Path(__file__).resolve().parent
 STATIC_DIR = ROOT / "static"
 DB_PATH = ROOT / "jobs.db"
 REPORTS_DIR = ROOT / "reports"
+TRADING_AGENTS_DIR = ROOT.parent / "TradingAgents-CN"
 
 # ── Logging ───────────────────────────────────────────
 logging.basicConfig(
@@ -216,6 +217,10 @@ class UploadAnalysisRequest(BaseModel):
     sector: str
     content: str   # raw material text pasted/read by client
 
+class DeepAnalysisRequest(BaseModel):
+    ticker: str
+    date: str = ""  # default to today if empty
+
 
 def run_upload_job(job_id: str, sector: str, mat_path: str):
     """后台线程：跳过 Pass 1，直接用上传素材跑 Pass 2。"""
@@ -265,6 +270,61 @@ def run_upload_job(job_id: str, sector: str, mat_path: str):
 
     except Exception as e:
         log.error(f"[{job_id[:8]}] Upload异常：{e}")
+        db_update_job(job_id, status="failed", error=str(e))
+
+
+def run_deep_analysis_job(job_id: str, ticker: str, date: str):
+    """后台线程：执行 TradingAgents 7-Agent 深度个股分析。"""
+    try:
+        db_update_job(job_id, status="running", progress="正在获取行情/新闻/基本面数据...")
+
+        demo_script = TRADING_AGENTS_DIR / "run_demo_cli.py"
+        if not demo_script.exists():
+            db_update_job(job_id, status="failed", error=f"脚本未找到：{demo_script}")
+            return
+
+        env = os.environ.copy()
+        env.pop("CLAUDECODE", None)
+
+        cmd = [sys.executable, str(demo_script), ticker, date]
+        log.info(f"[{job_id[:8]}] 启动深度分析: ticker={ticker}, date={date}")
+
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            cwd=str(TRADING_AGENTS_DIR),
+            env=env,
+        )
+
+        for line in proc.stdout:
+            line = line.rstrip()
+            if line.strip():
+                db_update_job(job_id, progress=line[-120:])
+
+        proc.wait()
+
+        if proc.returncode != 0:
+            db_update_job(job_id, status="failed", error=f"深度分析失败（退出码 {proc.returncode}）")
+            return
+
+        report_path = TRADING_AGENTS_DIR / "results_cli" / ticker / date / "full_report.md"
+        if not report_path.exists():
+            db_update_job(job_id, status="failed", error="报告文件未生成")
+            return
+
+        result_md = report_path.read_text(encoding="utf-8")
+
+        # 同时拷贝到 reports/ 以便统一下载
+        REPORTS_DIR.mkdir(exist_ok=True)
+        (REPORTS_DIR / f"deep_{ticker}_{date}.md").write_text(result_md, encoding="utf-8")
+
+        db_update_job(job_id, status="done", progress="深度分析完成（7-Agent）", result=result_md)
+        log.info(f"[{job_id[:8]}] 深度分析完成，报告 {len(result_md)} 字符")
+
+    except Exception as e:
+        log.error(f"[{job_id[:8]}] 深度分析异常：{e}")
         db_update_job(job_id, status="failed", error=str(e))
 
 
@@ -370,6 +430,28 @@ async def start_round1(req: Round1Request):
     t = threading.Thread(target=run_round1_job, args=(job_id, sector), daemon=True)
     t.start()
     log.info(f"Round1 任务已创建：{job_id[:8]}，行业：{sector}")
+    return {"job_id": job_id}
+
+
+@app.post("/api/deep-analysis")
+async def start_deep_analysis(req: DeepAnalysisRequest):
+    """启动 TradingAgents 深度个股分析任务（7-Agent，~15-20分钟）。"""
+    import re
+    ticker = req.ticker.strip()
+    if not re.match(r"^\d{6}$", ticker):
+        raise HTTPException(400, f"股票代码格式错误：{ticker}（应为6位数字）")
+
+    date = req.date.strip() or datetime.now().strftime("%Y-%m-%d")
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(400, "日期格式错误，应为 YYYY-MM-DD")
+
+    job_id = str(uuid.uuid4())
+    db_create_job(job_id, "deep", {"ticker": ticker, "date": date})
+    t = threading.Thread(target=run_deep_analysis_job, args=(job_id, ticker, date), daemon=True)
+    t.start()
+    log.info(f"深度分析任务已创建：{job_id[:8]}，ticker={ticker}，date={date}")
     return {"job_id": job_id}
 
 

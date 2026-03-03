@@ -319,6 +319,7 @@
   <button class="tab-btn active" id="tab-btn-round1" onclick="switchTab('round1')">📋 行业研报</button>
   <button class="tab-btn" id="tab-btn-upload" onclick="switchTab('upload')">📁 素材上传分析</button>
   <button class="tab-btn" id="tab-btn-round2" onclick="switchTab('round2')">📊 个股量化</button>
+  <button class="tab-btn" id="tab-btn-deep" onclick="switchTab('deep')">🔬 深度个股分析</button>
 </div>
 
 <!-- ══════════════════ Tab: 行业研报 (Round 1) ══════════════════ -->
@@ -447,6 +448,57 @@
   </div>
 </div>
 
+<!-- ══════════════════ Tab: 深度个股分析 (TradingAgents 7-Agent) ══════════════════ -->
+<div id="tab-deep" class="tab-panel">
+  <div class="method-box">
+    <div class="mb-title">🔬 TradingAgents 7-Agent 深度分析</div>
+    <ol>
+      <li><strong>三位分析师（Sonnet）</strong>：技术面 / 新闻舆情 / 基本面 并行分析</li>
+      <li><strong>多空辩论（Opus）</strong>：多方研究员 vs 空方研究员，构建论点</li>
+      <li><strong>研究主任裁定（Opus）</strong>：综合多空，给出目标价与置信度</li>
+      <li><strong>风险管理（Opus）</strong>：仓位建议 + 止损机制</li>
+      <li><strong>最终交易员建议（Opus）</strong>：具体操作方案 + 汇总表格</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>深度个股分析</h2>
+    <div class="row">
+      <div class="grow">
+        <label>A股代码（单只）</label>
+        <input type="text" id="da-ticker" placeholder="例：601608" maxlength="6">
+      </div>
+      <div>
+        <label>分析日期</label>
+        <input type="text" id="da-date" placeholder="YYYY-MM-DD（留空=今天）" style="width:180px;">
+      </div>
+    </div>
+    <p class="hint" style="margin-top:8px;">从行业研报推荐标的里选一只，做详细多空辩论。单只约 15-20 分钟。</p>
+    <div id="da-error" class="error-msg" style="display:none;"></div>
+    <br>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="da-btn" onclick="submitDeepAnalysis()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        开始深度分析
+      </button>
+      <span class="hint">预计 15-20 分钟（3×Sonnet + 4×Opus）</span>
+    </div>
+  </div>
+
+  <div id="da-progress" class="progress-area">
+    <p class="progress-label">分析进度</p>
+    <div class="progress-bar-wrap"><div class="progress-bar indeterminate" id="da-pbar"></div></div>
+    <p class="progress-text" id="da-ptext">正在初始化...</p>
+  </div>
+
+  <div id="da-result" class="result-area"></div>
+
+  <div class="history-section">
+    <h3>历史任务</h3>
+    <div class="history-list" id="da-history"></div>
+  </div>
+</div>
+
 <!-- ══════════════════ JavaScript ══════════════════ -->
 <script>
 // ── Tab 切换 ──────────────────────────────────────────
@@ -455,7 +507,8 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   document.getElementById('tab-btn-' + tab).classList.add('active');
-  loadHistory(tab);
+  const typeMap = {round1: 'round1', upload: 'upload', round2: 'round2', deep: 'deep'};
+  loadHistory(typeMap[tab] || tab);
 }
 
 // ── 轮询 ──────────────────────────────────────────────
@@ -480,7 +533,7 @@ async function pollJob(jobId, prefix) {
       if (pbar) { pbar.classList.remove('indeterminate'); pbar.style.width = '100%'; }
       renderResult(prefix, job);
       enableBtn(prefix);
-      const typeMap = {r1: 'round1', ru: 'upload', r2: 'round2'};
+      const typeMap = {r1: 'round1', ru: 'upload', r2: 'round2', da: 'deep'};
       loadHistory(typeMap[prefix]);
     } else if (job.status === 'failed') {
       clearInterval(pollTimers[jobId]);
@@ -497,6 +550,7 @@ const BTN_LABELS = {
   r1: '生成研报',
   ru: '开始分析',
   r2: '开始分析',
+  da: '开始深度分析',
 };
 
 function disableBtn(prefix) {
@@ -705,6 +759,39 @@ async function submitRound2() {
   } catch(e) { showError('r2', '网络错误：' + e.message); enableBtn('r2'); }
 }
 
+// ── 深度分析提交 ──────────────────────────────────────
+async function submitDeepAnalysis() {
+  const ticker = document.getElementById('da-ticker').value.trim();
+  const date = document.getElementById('da-date').value.trim();
+  const errEl = document.getElementById('da-error');
+  errEl.style.display = 'none';
+
+  if (!/^\d{6}$/.test(ticker)) {
+    errEl.textContent = '请输入6位数字股票代码（如 601608）';
+    errEl.style.display = 'block'; return;
+  }
+  if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    errEl.textContent = '日期格式错误，应为 YYYY-MM-DD，或留空使用今天';
+    errEl.style.display = 'block'; return;
+  }
+
+  disableBtn('da');
+  document.getElementById('da-progress').classList.add('show');
+  document.getElementById('da-pbar').classList.add('indeterminate');
+  document.getElementById('da-ptext').textContent = '正在提交...';
+  document.getElementById('da-result').innerHTML = '';
+
+  try {
+    const res = await fetch('/api/deep-analysis', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ticker, date})
+    });
+    if (!res.ok) { const e = await res.json(); showError('da', e.detail || '提交失败'); enableBtn('da'); return; }
+    const {job_id} = await res.json();
+    startPolling(job_id, 'da');
+  } catch(e) { showError('da', '网络错误：' + e.message); enableBtn('da'); }
+}
+
 // ── 下载 Markdown ─────────────────────────────────────
 const resultStore = {};  // jobId → {content, filename}
 
@@ -736,6 +823,20 @@ function renderResult(prefix, job) {
     el.insertAdjacentHTML('beforeend', `
       <div style="margin-top:12px;text-align:right;">
         <button class="btn btn-secondary" onclick="downloadMd('${job.id}')">↓ 下载 Markdown</button>
+      </div>`);
+  } else if (prefix === 'da') {
+    const params = (() => { try { return JSON.parse(job.params || '{}'); } catch { return {}; } })();
+    const fname = `deep_${params.ticker || 'stock'}_${params.date || ts}.md`;
+    resultStore[job.id] = {content: job.result, filename: fname};
+    el.innerHTML = `<div class="report-md">${marked.parse(job.result || '')}</div>`;
+    el.insertAdjacentHTML('beforeend', `
+      <div style="margin-top:12px;text-align:right;">
+        <button class="btn btn-secondary" onclick="downloadMd('${job.id}')">↓ 下载 Markdown</button>
+      </div>`);
+    el.insertAdjacentHTML('afterbegin', `
+      <div class="next-step-hint">
+        <p>深度分析完成 — 7 Agent 多空辩论报告已生成</p>
+        <button class="btn-ghost" onclick="switchTab('round1')">返回行业研报</button>
       </div>`);
   } else {
     const label = prefix === 'r1' ? 'report' : 'upload_analysis';
@@ -847,7 +948,7 @@ async function loadHistory(type) {
   try {
     const res = await fetch('/api/jobs');
     const jobs = await res.json();
-    const prefixMap = {round1: 'r1', upload: 'ru', round2: 'r2'};
+    const prefixMap = {round1: 'r1', upload: 'ru', round2: 'r2', deep: 'da'};
     const prefix = prefixMap[type] || type;
     const filtered = jobs.filter(j => j.type === type);
     const container = document.getElementById(prefix + '-history');
@@ -861,6 +962,8 @@ async function loadHistory(type) {
       const params = (() => { try { return JSON.parse(j.params || '{}'); } catch { return {}; } })();
       const label = type === 'round2'
         ? (params.stocks || []).join(', ')
+        : type === 'deep'
+        ? `${params.ticker || '?'} (${params.date || ''})`
         : (params.sector || '未知行业');
       const time = (j.created_at || '').slice(0, 16).replace('T', ' ');
       return `<div class="history-item" onclick="loadJobResult('${j.id}', '${prefix}')">
