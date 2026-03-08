@@ -29,6 +29,10 @@ import sys
 import time
 from pathlib import Path
 
+# 确保 CDP 和 Playwright 连接不走代理
+os.environ.setdefault("NO_PROXY", "localhost,127.0.0.1")
+os.environ.setdefault("no_proxy", "localhost,127.0.0.1")
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent.parent  # nuwa-project/
 
@@ -77,13 +81,13 @@ def parse_publish_guide(guide_path: Path) -> dict:
     if m:
         info["cover"] = m.group(1).strip().split("（")[0].split("(")[0]
 
-    # 提取图片 — 表格中（兼容 backtick 和裸路径）
+    # 提取图片 — 表格中（兼容 backtick、裸路径、带/不带 images/ 前缀）
     for m in re.finditer(r"\|\s*`?(images/\S+?)`?\s*\|", text):
         img = m.group(1).strip()
         if img not in info["images"] and img != info["cover"]:
             info["images"].append(img)
 
-    for m in re.finditer(r"\|\s*`(\S+\.(?:png|jpg|jpeg|gif))`\s*\|", text):
+    for m in re.finditer(r"\|\s*`?(\S+\.(?:png|jpg|jpeg|gif))`?\s*\|", text):
         img_name = m.group(1).strip()
         img_path = f"images/{img_name}" if not img_name.startswith("images/") else img_name
         if img_path not in info["images"] and img_path != info["cover"]:
@@ -98,8 +102,38 @@ def parse_publish_guide(guide_path: Path) -> dict:
     return info
 
 
+def parse_poll_file(poll_path: Path) -> dict:
+    """从 poll.md 提取投票信息：question + options"""
+    if not poll_path.exists():
+        return {}
+    text = poll_path.read_text(encoding="utf-8")
+    result = {"question": "", "options": []}
+    # 提取问题（兼容两种格式：## 问题\n内容  或  问题：内容）
+    m = re.search(r"##\s*问题\s*\n+(.+)", text)
+    if not m:
+        m = re.search(r"问题[：:]\s*(.+)", text)
+    if m:
+        result["question"] = m.group(1).strip()
+    # 提取选项（数字列表）
+    for m in re.finditer(r"^\d+\.\s*(.+)", text, re.MULTILINE):
+        result["options"].append(m.group(1).strip())
+    return result
+
+
 def start_https_server(images_dir: Path, port: int = 18443) -> subprocess.Popen:
     """启动 HTTPS 图片服务器（后台进程）"""
+    # 先杀掉可能残留的旧服务器
+    try:
+        result = subprocess.run(
+            ["lsof", "-ti", f":{port}"], capture_output=True, text=True, timeout=5
+        )
+        if result.stdout.strip():
+            for pid in result.stdout.strip().split('\n'):
+                subprocess.run(["kill", pid.strip()], timeout=5)
+            time.sleep(1)
+    except Exception:
+        pass
+
     server_script = SCRIPT_DIR / "https_server.py"
     proc = subprocess.Popen(
         [sys.executable, str(server_script), str(images_dir), str(port)],
@@ -115,109 +149,180 @@ def start_https_server(images_dir: Path, port: int = 18443) -> subprocess.Popen:
     return proc
 
 
-async def mdnice_render(md_text: str, screenshot_dir: Path = None) -> bool:
-    """用 Playwright 操作 mdnice.com 排版，复制富文本到剪贴板
+MDNICE_PROFILE = os.path.expanduser("~/.mdnice-profile")
 
-    流程：打开 mdnice → 清空编辑器 → 粘贴 markdown → 选橙心主题 → 点复制
+
+async def _hide_modals(page):
+    """JS 强制隐藏 mdnice 的所有 ant-modal 弹窗（版本更新、登录提示等）"""
+    await page.evaluate("""() => {
+        document.querySelectorAll(
+            '.ant-modal-root, .ant-modal-mask, .ant-modal-wrap, .global-mask'
+        ).forEach(el => el.style.display = 'none');
+    }""")
+    await asyncio.sleep(0.3)
+
+
+async def _ensure_article(page, md_text: str):
+    """确保有活跃文章（预览区才能渲染）。
+
+    如果没有活跃文章，通过 Cmd+V 触发"新增文章"对话框创建一篇。
+    创建后编辑器会被清空，需要重新粘贴内容。
+    返回 True 表示有活跃文章（可能是已有的或新创建的）。
+    """
+    # 检查是否已有活跃文章（#nice 预览区有内容）
+    has_article = await page.evaluate("""() => {
+        const nice = document.querySelector('#nice');
+        return nice && nice.children.length > 0;
+    }""")
+    if has_article:
+        return True
+
+    print("  No active article, creating one...")
+    # Cmd+V 粘贴内容 → 触发 "新增文章" 对话框
+    subprocess.run(["pbcopy"], input=md_text.encode("utf-8"), timeout=5)
+    editor = await page.query_selector(".CodeMirror")
+    if editor:
+        await editor.click(force=True)
+        await asyncio.sleep(0.3)
+    await page.keyboard.press("Meta+v")
+    await asyncio.sleep(2)
+
+    # 恢复被隐藏的 modal（之前 _hide_modals 可能隐藏了）
+    await page.evaluate("""() => {
+        document.querySelectorAll('.ant-modal-root, .ant-modal-mask, .ant-modal-wrap')
+            .forEach(el => el.style.display = '');
+    }""")
+    await asyncio.sleep(0.5)
+
+    # 处理"新增文章"对话框
+    has_dialog = await page.evaluate("""() => {
+        const wraps = document.querySelectorAll('.ant-modal-wrap');
+        for (const w of wraps) {
+            if (getComputedStyle(w).display !== 'none' && w.textContent.includes('新增文章'))
+                return true;
+        }
+        return false;
+    }""")
+    if not has_dialog:
+        return False
+
+    # 选择文件夹（ant-select 下拉框）
+    select_el = await page.query_selector('.ant-modal .ant-select-selector')
+    if select_el:
+        await select_el.click(force=True)
+        await asyncio.sleep(1)
+        first_opt = await page.query_selector('.ant-select-item-option')
+        if first_opt and await first_opt.is_visible():
+            await first_opt.click(force=True)
+            await asyncio.sleep(0.5)
+
+    # 点击"新增"按钮
+    create_btn = await page.query_selector('.ant-modal .ant-btn-primary')
+    if create_btn and not await create_btn.is_disabled():
+        await create_btn.click(force=True)
+        await asyncio.sleep(3)
+        print("  Article created")
+        await _hide_modals(page)
+        return True
+
+    return False
+
+
+async def mdnice_render(md_text: str, screenshot_dir: Path = None,
+                        keep_browser: bool = False) -> bool:
+    """用 Playwright 持久化浏览器操作 mdnice.com 排版，复制富文本到剪贴板
+
+    使用 persistent context 保持登录状态，无需每次扫码。
+    流程：打开 mdnice → 关闭弹窗 → 确保有文章 → 设置内容 → 选主题 → 复制到微信
+
+    Args:
+        keep_browser: True 时不关闭浏览器（调试/dry-run 用）
     """
     from playwright.async_api import async_playwright
 
     print("--- mdnice 排版 ---")
-    pw = await async_playwright().__aenter__()
-    browser = await pw.chromium.launch(headless=False)  # 需要看得见剪贴板交互
-    page = await browser.new_page()
+
+    # 清理可能残留的锁文件
+    for lock in ("SingletonLock", "SingletonCookie", "SingletonSocket"):
+        lock_path = os.path.join(MDNICE_PROFILE, lock)
+        if os.path.exists(lock_path):
+            os.remove(lock_path)
+
+    pw = await async_playwright().start()
+    context = await pw.chromium.launch_persistent_context(
+        user_data_dir=MDNICE_PROFILE,
+        headless=False,
+        viewport={"width": 1280, "height": 720},
+    )
+    page = context.pages[0] if context.pages else await context.new_page()
 
     try:
         # 1. 打开 mdnice
         print("  Opening mdnice.com...")
-        await page.goto(MDNICE_URL, wait_until="networkidle", timeout=30000)
-        await asyncio.sleep(2)
+        await page.goto(MDNICE_URL, wait_until="domcontentloaded", timeout=30000)
+        await asyncio.sleep(3)
+        await _hide_modals(page)
 
         if screenshot_dir:
             await page.screenshot(path=str(screenshot_dir / "_mdnice_01_loaded.png"))
 
-        # 2. 找到编辑器（CodeMirror），清空并填入 markdown
-        print("  Pasting markdown into editor...")
-        # mdnice 用 CodeMirror，找 .CodeMirror textarea 或直接操作
+        # 2. 确保有活跃文章（否则预览不渲染、复制不工作）
+        await _ensure_article(page, md_text)
+
+        # 3. 通过剪贴板粘贴 markdown（Cmd+V 触发预览渲染，setValue 不行）
+        print("  Pasting markdown content...")
+        subprocess.run(["pbcopy"], input=md_text.encode("utf-8"), timeout=5)
         editor = await page.query_selector(".CodeMirror")
-        if not editor:
-            # 备选：找 textarea 或 contenteditable
-            editor = await page.query_selector("textarea")
-        if not editor:
-            print("  ERROR: 找不到 mdnice 编辑器", file=sys.stderr)
-            if screenshot_dir:
-                await page.screenshot(path=str(screenshot_dir / "_mdnice_error.png"))
-            return False
-
-        # 点击编辑器获得焦点
-        await editor.click()
-        await asyncio.sleep(0.3)
-
-        # 全选 + 删除现有内容
-        await page.keyboard.press("Meta+a")
-        await asyncio.sleep(0.1)
-        await page.keyboard.press("Backspace")
-        await asyncio.sleep(0.3)
-
-        # 输入 markdown（通过剪贴板粘贴，比逐字输入快）
-        # 先把 md 写入系统剪贴板
-        proc = subprocess.run(
-            ["pbcopy"], input=md_text.encode("utf-8"), timeout=5
-        )
-        await page.keyboard.press("Meta+v")
-        await asyncio.sleep(2)  # 等待渲染
+        if editor:
+            await editor.click(force=True)
+            await asyncio.sleep(0.3)
+            await page.keyboard.press("Meta+a")
+            await asyncio.sleep(0.1)
+            await page.keyboard.press("Meta+v")
+            await asyncio.sleep(3)  # 等待预览渲染
 
         if screenshot_dir:
             await page.screenshot(path=str(screenshot_dir / "_mdnice_02_pasted.png"))
 
-        # 3. 选择橙心主题
+        # 4. 选择橙心主题
         print(f"  Selecting theme: {MDNICE_THEME}...")
-        # 点击主题按钮（通常在顶部工具栏）
-        theme_btn = await page.query_selector('[class*="theme"]')
-        if not theme_btn:
-            # 尝试找包含"主题"文字的按钮
-            theme_btn = await page.get_by_text("主题").first.element_handle()
-        if theme_btn:
-            await theme_btn.click()
-            await asyncio.sleep(1)
+        await page.click("a.nice-menu-link:has-text('主题')", force=True)
+        await asyncio.sleep(2)
 
-            # 在主题列表中找橙心
-            orange = await page.get_by_text(MDNICE_THEME).first.element_handle()
-            if orange:
-                await orange.click()
-                await asyncio.sleep(1)
-                # 点"使用"按钮
-                use_btn = await page.get_by_text("使用").first.element_handle()
-                if use_btn:
-                    await use_btn.click()
-                    await asyncio.sleep(1)
-                    print(f"  Theme '{MDNICE_THEME}' applied")
-            else:
-                print(f"  WARNING: 主题 '{MDNICE_THEME}' 未找到", file=sys.stderr)
+        # 在主题列表中找到橙心并点击其"使用"按钮
+        theme_applied = await page.evaluate("""(themeName) => {
+            const items = document.querySelectorAll('.theme-list > *');
+            for (const item of items) {
+                if (item.textContent.includes(themeName)) {
+                    const btn = item.querySelector('button');
+                    if (btn) { btn.click(); return 'OK'; }
+                }
+            }
+            return 'NOT_FOUND';
+        }""", MDNICE_THEME)
+
+        if theme_applied == "OK":
+            print(f"  Theme '{MDNICE_THEME}' applied")
         else:
-            print("  WARNING: 主题按钮未找到", file=sys.stderr)
+            print(f"  WARNING: 主题 '{MDNICE_THEME}' 未找到", file=sys.stderr)
+
+        await asyncio.sleep(2)
+        await page.keyboard.press("Escape")  # 关闭主题面板
+        await asyncio.sleep(1)
 
         if screenshot_dir:
             await page.screenshot(path=str(screenshot_dir / "_mdnice_03_themed.png"))
 
-        # 4. 点击复制按钮
-        print("  Copying formatted content...")
-        copy_btn = await page.get_by_text("复制").first.element_handle()
-        if not copy_btn:
-            copy_btn = await page.query_selector('[class*="copy"]')
-        if copy_btn:
-            await copy_btn.click()
-            await asyncio.sleep(1)
-            print("  Copied to clipboard")
+        # 5. 点击右侧栏微信复制按钮
+        print("  Copying formatted content for WeChat...")
+        wechat_btn = await page.query_selector("a.nice-btn-wechat")
+        if wechat_btn:
+            await wechat_btn.click(force=True)
+            await asyncio.sleep(2)
+            print("  Copied to clipboard via WeChat button")
         else:
-            print("  WARNING: 复制按钮未找到，尝试手动复制右侧预览", file=sys.stderr)
-            # fallback: 选中右侧预览区域内容并复制
-            preview = await page.query_selector('[class*="preview"]')
-            if preview:
-                await preview.click()
-                await page.keyboard.press("Meta+a")
-                await page.keyboard.press("Meta+c")
-                await asyncio.sleep(1)
+            print("  WARNING: WeChat 复制按钮未找到", file=sys.stderr)
+            return False
 
         if screenshot_dir:
             await page.screenshot(path=str(screenshot_dir / "_mdnice_04_copied.png"))
@@ -234,13 +339,31 @@ async def mdnice_render(md_text: str, screenshot_dir: Path = None) -> bool:
         return False
 
     finally:
-        await browser.close()
-        await pw.__aexit__(None, None, None)
+        if keep_browser:
+            print("  Browser kept open — Ctrl+C to close")
+            try:
+                while True:
+                    await asyncio.sleep(1)
+            except (KeyboardInterrupt, asyncio.CancelledError):
+                pass
+            finally:
+                await context.close()
+                await pw.stop()
+        else:
+            await context.close()
+            await pw.stop()
 
 
 async def publish(topic_dir: Path, dry_run: bool = False,
                   cdp_url: str = "http://localhost:9222", port: int = 18443):
-    """完整发布流程"""
+    """完整发布流程
+
+    关键改进（v2）：
+    - 图片先上传到微信 CDN → 拿到 CDN URL → 替换 markdown 里的本地路径
+    - mdnice 渲染时图片已是 CDN URL → 富文本粘贴到编辑器后图片自动显示
+    - 原创对话框用 Playwright keyboard 输入作者（触发 Vue v-model）
+    - 验证改为检查草稿箱（不只是截图编辑器）
+    """
 
     # ── Step 0: 验证文件 ──
     guide_path = topic_dir / "publish_guide.md"
@@ -263,124 +386,202 @@ async def publish(topic_dir: Path, dry_run: bool = False,
     md_text = md_path.read_text(encoding="utf-8")
     print(f"Markdown: {len(md_text)} chars")
 
-    # ── Step 1: mdnice 排版 → 富文本到剪贴板 ──
-    ok = await mdnice_render(md_text, screenshot_dir=topic_dir)
-    if not ok:
-        print("ERROR: mdnice 排版失败", file=sys.stderr)
-        return 1
-
+    # ── Dry run: 只走 mdnice，不操作微信 ──
     if dry_run:
+        ok = await mdnice_render(md_text, screenshot_dir=topic_dir,
+                                 keep_browser=True)
+        if not ok:
+            print("ERROR: mdnice 排版失败", file=sys.stderr)
+            return 1
         print("\n=== DRY RUN ===")
         print("mdnice 排版完成，富文本已在剪贴板")
-        print("截图保存在选题目录（_mdnice_*.png）")
-        print("Skipping 微信编辑器操作")
+        final_shot = topic_dir / "_mdnice_03_themed.png"
+        if final_shot.exists():
+            subprocess.run(["open", str(final_shot)], timeout=5)
+            print(f"已打开截图: {final_shot}")
         return 0
 
-    # ── Step 2: Playwright CDP → 微信编辑器 ──
-    from wechat_automator import WeChatAutomator
+    # ── Step 1: 连接微信后台 + 上传图片到 CDN ──
     sys.path.insert(0, str(SCRIPT_DIR))
+    from wechat_automator import WeChatAutomator
 
     auto = WeChatAutomator(cdp_url=cdp_url)
     await auto.connect()
 
-    # 2a. 新建图文
+    # 确保有可用的 MP 页面（用于上传图片等 API 调用）
+    mp_ready = await auto.find_or_create_mp_page()
+    if not mp_ready:
+        print("ERROR: 无法访问微信后台，请先在 Chrome 中登录", file=sys.stderr)
+        await auto.close()
+        return 1
+
+    # 关闭之前残留的失效编辑器 tab
+    for page in list(auto.context.pages):
+        if page != auto.page and ("appmsg_edit" in page.url or "appmsg" in page.url):
+            if "token=" not in page.url:
+                await page.close()
+                print(f"  Closed stale tab: {page.url[:60]}")
+
+    # 上传所有图片到微信 CDN，收集 CDN URL 映射（base64，不依赖 HTTPS 服务器）
+    cdn_map = {}  # "images/xxx.png" -> "https://mmbiz.qpic.cn/..."
+    all_images = list(info["images"])
+    if info["cover"] and info["cover"] not in all_images:
+        all_images.append(info["cover"])
+
+    https_proc = None
+    if images_dir.exists() and all_images:
+        print(f"\n--- 上传 {len(all_images)} 张图片到 CDN ---")
+        for img_rel in all_images:
+            img_path = topic_dir / img_rel
+            if not img_path.exists():
+                print(f"  SKIP (not found): {img_rel}")
+                continue
+            try:
+                result = await auto.upload_image_file(img_path)
+                if result.get("ok") and result.get("cdn_url"):
+                    cdn_map[img_rel] = result["cdn_url"]
+                    cdn_map[img_path.name] = result["cdn_url"]
+            except Exception as e:
+                print(f"  WARNING: Upload failed for {img_path.name}: {e}", file=sys.stderr)
+            await asyncio.sleep(0.5)
+
+    print(f"\n  CDN mapping: {len(cdn_map)} images uploaded")
+    for local, cdn in cdn_map.items():
+        if "/" in local:  # 只打印带路径的
+            print(f"    {local} → {cdn[:60]}...")
+
+    # ── Step 2: 替换 markdown 中的本地路径为 CDN URL ──
+    md_for_mdnice = md_text
+    for local_path, cdn_url in cdn_map.items():
+        md_for_mdnice = md_for_mdnice.replace(local_path, cdn_url)
+
+    replacements = md_text.count("images/") - md_for_mdnice.count("images/")
+    print(f"  Replaced {replacements} image references with CDN URLs")
+
+    # ── Step 3: mdnice 排版 → 富文本到剪贴板 ──
+    ok = await mdnice_render(md_for_mdnice, screenshot_dir=topic_dir)
+    if not ok:
+        print("ERROR: mdnice 排版失败", file=sys.stderr)
+        if https_proc:
+            https_proc.terminate()
+        await auto.close()
+        return 1
+
+    # ── Step 4: 新建图文 + 粘贴 ──
     print("\n--- 新建图文 ---")
     await auto.new_post()
     await asyncio.sleep(2)
-    await auto.find_editor_page()
 
-    # 2b. 粘贴 mdnice 富文本
     print("\n--- 粘贴正文 ---")
     await auto.paste_clipboard()
-    await asyncio.sleep(2)
+    await asyncio.sleep(3)  # 给编辑器时间处理富文本
 
-    # 2c. 设置标题
+    # ── Step 5: 设置标题和简介 ──
     if info["title"]:
         print(f"\n--- 设置标题: {info['title'][:30]}... ---")
-        await auto.set_title(info["title"])
+        try:
+            await auto.set_title(info["title"])
+        except Exception as e:
+            print(f"  WARNING: 设置标题失败: {e}", file=sys.stderr)
         await asyncio.sleep(0.5)
 
-    # 2d. 设置简介
     if info["description"]:
         print(f"\n--- 设置简介: {info['description'][:30]}... ---")
-        await auto.set_description(info["description"])
+        try:
+            await auto.set_description(info["description"])
+        except Exception as e:
+            print(f"  WARNING: 设置简介失败: {e}", file=sys.stderr)
         await asyncio.sleep(0.5)
 
-    # 2e. 上传图片
-    https_proc = None
-    if images_dir.exists() and info["images"]:
-        print(f"\n--- 上传 {len(info['images'])} 张图片 ---")
-        https_proc = start_https_server(images_dir, port)
-        if https_proc:
-            for img_rel in info["images"]:
-                img_name = Path(img_rel).name
-                img_url = f"https://localhost:{port}/{img_name}"
-                print(f"  Uploading: {img_name}")
-                try:
-                    await auto.upload_image_via_js(img_url, img_name)
-                except Exception as e:
-                    print(f"  WARNING: Upload failed for {img_name}: {e}", file=sys.stderr)
-                await asyncio.sleep(1)
-
-    # 2f. 上传封面图
+    # ── Step 6a: 设置封面图 ──
     if info["cover"]:
-        cover_path = topic_dir / info["cover"]
-        if cover_path.exists():
-            print(f"\n--- 上传封面图: {info['cover']} ---")
-            if not https_proc and images_dir.exists():
-                https_proc = start_https_server(images_dir, port)
-            if https_proc:
-                cover_url = f"https://localhost:{port}/{cover_path.name}"
-                try:
-                    await auto.upload_image_via_js(cover_url, cover_path.name)
-                except Exception as e:
-                    print(f"  WARNING: Cover upload failed: {e}", file=sys.stderr)
+        cover_name = Path(info["cover"]).name
+        print(f"\n--- 设置封面图: {cover_name} ---")
+        try:
+            ok = await auto.set_cover_image(cover_name)
+            if not ok:
+                print("  WARNING: 封面图设置失败，请手动设置", file=sys.stderr)
+        except Exception as e:
+            print(f"  WARNING: 封面图设置异常: {e}", file=sys.stderr)
+        await asyncio.sleep(1)
 
-    # 2g. 开启原创 + 赞赏
-    print("\n--- 开启原创+赞赏 ---")
+    # ── Step 6b: 开启原创 ──
+    print("\n--- 开启原创 ---")
     try:
         await auto.enable_original()
     except Exception as e:
         print(f"WARNING: 原创开启失败: {e}", file=sys.stderr)
     await asyncio.sleep(1)
 
-    # 2h. 清除空表格
+    # ── Step 6c: 开启赞赏 ──
+    print("\n--- 开启赞赏 ---")
+    try:
+        await auto.enable_reward()
+    except Exception as e:
+        print(f"WARNING: 赞赏开启失败: {e}", file=sys.stderr)
+    await asyncio.sleep(1)
+
+    # ── Step 7: 插入投票 ──
+    poll_path = topic_dir / "poll.md"
+    poll_info = parse_poll_file(poll_path)
+    if poll_info.get("question") and poll_info.get("options"):
+        print(f"\n--- 插入投票: {poll_info['question'][:30]}... ---")
+        try:
+            ok = await auto.add_poll(poll_info["question"], poll_info["options"])
+            if not ok:
+                print("  WARNING: 投票插入失败，请手动添加", file=sys.stderr)
+        except Exception as e:
+            print(f"  WARNING: 投票插入异常: {e}", file=sys.stderr)
+        await asyncio.sleep(1)
+    else:
+        print("\n--- 无投票文件，跳过 ---")
+
+    # ── Step 8: 清除空表格 + 保存 ──
     print("\n--- 清除空表格 ---")
     await auto.remove_empty_tables()
 
-    # 2i. 保存
     print("\n--- 保存草稿 ---")
     await auto.trigger_save()
-    await asyncio.sleep(2)
+    await asyncio.sleep(3)
 
-    # ── Step 3: 截图验证 ──
-    screenshot_path = str(topic_dir / "_publish_screenshot.png")
-    print(f"\n--- 截图验证 ---")
-    await auto.screenshot(screenshot_path)
+    # ── Step 8: 验证草稿 ──
+    print(f"\n--- 验证草稿 ---")
+    draft_screenshot = str(topic_dir / "_draft_verify.png")
+    found = await auto.verify_draft(info["title"], screenshot_path=draft_screenshot)
+    if found:
+        print(f"  VERIFIED: 草稿箱中找到文章")
+    else:
+        print(f"  WARNING: 草稿箱中未找到文章", file=sys.stderr)
+        # 截一下编辑器状态便于调试
+        await auto.screenshot(str(topic_dir / "_editor_debug.png"))
 
-    # 清理
-    if https_proc:
-        https_proc.terminate()
-        print("HTTPS server stopped")
+    # 打开验证截图给用户看
+    if os.path.exists(draft_screenshot):
+        subprocess.run(["open", draft_screenshot], timeout=5)
 
     await auto.close()
 
-    # ── Step 4: 通知 ──
-    notify_msg = f"草稿已保存: {info['title'][:30]}"
+    # ── Step 10: 通知 ──
+    status = "VERIFIED" if found else "UNVERIFIED"
+    # 通知文本中去掉特殊字符避免 osascript 语法错误
+    safe_title = info['title'][:20].replace('"', '').replace("'", "").replace('\\', '')
     try:
         subprocess.run([
             "osascript", "-e",
-            f'display notification "{notify_msg}" with title "降临派手记 · 发布"'
+            f'display notification "草稿{status}" with title "{safe_title}"'
         ], timeout=5)
     except Exception:
         pass
 
     print(f"\n{'='*60}")
-    print(f"DONE: 草稿已保存到微信后台")
-    print(f"截图: {screenshot_path}")
-    print(f"请在微信后台确认并发布")
+    if found:
+        print(f"DONE: 草稿已保存到微信后台")
+    else:
+        print(f"WARNING: 草稿可能未保存，请手动检查")
+    print(f"验证截图: {draft_screenshot}")
+    print(f"完成项: 标题/简介/图片/投票/原创/赞赏/封面/保存")
     print(f"{'='*60}")
-    return 0
+    return 0 if found else 1
 
 
 def main():

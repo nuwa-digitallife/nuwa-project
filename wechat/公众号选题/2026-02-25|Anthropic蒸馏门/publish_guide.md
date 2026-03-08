@@ -35,11 +35,11 @@
 
 | 位置 | 图片 | 类型 |
 |------|------|------|
-| 第一条线·博客段 | `anthropic_blog.png` | 实物截图 |
-| 第二条线·时间表前 | `copyright_timeline.png` | 自制数据图 |
-| 马斯克推文段 | `musk_tweet.png` | 实物截图 |
-| 第三条线·开头 | `timeline_72h.png` | 自制数据图 |
-| TIME杂志段 | `time_headline.png` | 实物截图 |
+| 第一条线·博客段 | `images/anthropic_blog.png` | 实物截图 |
+| 第二条线·时间表前 | `images/copyright_timeline.png` | 自制数据图 |
+| 马斯克推文段 | `images/musk_tweet.png` | 实物截图 |
+| 第三条线·开头 | `images/timeline_72h.png` | 自制数据图 |
+| TIME杂志段 | `images/time_headline.png` | 实物截图 |
 
 ## 发布步骤
 

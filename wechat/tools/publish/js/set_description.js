@@ -3,13 +3,16 @@
 (function() {
     var desc = "__DESCRIPTION__";
     var textarea = document.querySelector("#js_description");
+    if (!textarea) {
+        textarea = document.querySelector("textarea[placeholder*='简介']")
+            || document.querySelector(".weui-desktop-editor__desc textarea");
+    }
     if (!textarea) return "description textarea not found";
 
-    // 用 native setter 触发 React/Vue 变更检测
-    var nativeSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype, 'value'
-    ).set;
-    nativeSetter.call(textarea, desc);
+    textarea.focus();
+    textarea.value = desc;
     textarea.dispatchEvent(new Event('input', {bubbles: true}));
+    textarea.dispatchEvent(new Event('change', {bubbles: true}));
+    textarea.blur();
     return "description set: " + desc.substring(0, 30) + "...";
 })();

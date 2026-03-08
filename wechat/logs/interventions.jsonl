@@ -4,3 +4,4 @@
 {"timestamp": "2026-03-07T15:00:00", "action": "修复 poll.md 格式：问题行需用 ## 问题 H2标题，不能用 问题：xxx 冒号格式", "target": "one_click_publish.py 的 parse_poll_file() 投票解析", "trigger": "首次发布投票被跳过，排查发现正则期望 ##\\s*问题 但文件用的是纯文本格式"}
 {"timestamp": "2026-03-07T15:00:00", "action": "Gemini 免费配额耗尽，封面图改用 Wikimedia Commons 真实围棋照片替代 matplotlib 生成图", "target": "封面图生成流程", "trigger": "用户反馈 matplotlib 封面太粗糙"}
 {"timestamp": "2026-03-08T10:30:00", "action": "Pass 4.5 标题优化用 sonnet（对比 opus 质量差距不大，省成本）", "target": "topic_config.yaml pass4b.model", "trigger": "sonnet vs opus 对比测试：标题质量相当，sonnet 更发散多产出备选，opus 更精炼克制"}
+{"timestamp": "2026-03-08T15:30:00", "action": "用户提出Agent项目经理愿景：手机发链接→调查→大纲→写作→发布全流程，零碎心智利用", "target": "AUTOMATION_PLAN / 公众号pipeline整体架构", "trigger": "用户希望从工具自动化升级为Agent自主管理，人只在关键节点审批"}
