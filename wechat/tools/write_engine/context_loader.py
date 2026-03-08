@@ -132,6 +132,7 @@ class ContextLoader:
                 "factcheck_report.md", "consensus.md",
                 "verification_report.md", "description_options.md",
                 "consensus_doc.md", "orphaned_recommendations.md",
+                "title_options.md",
             ):
                 continue
             content = md_file.read_text(encoding="utf-8")

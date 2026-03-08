@@ -11,6 +11,7 @@
   Pass 3.5: 协商闭环 — Writing/Fact Agent 回应 → Review Agent 评估 → 达成共识 → 执行修改 → 验收
   Pass 5: 迭代求导（可选）— 证据硬度审计 → 定向调研 → 重写 → 收敛判断，循环
   Pass 4: 整合Agent — 合并修正，输出全部交付物
+  Pass 4.5: 标题优化Agent — 标题备选 + 简介评估，注入 publish_guide
 
 每个 Pass 是一次独立的 claude -p 调用，Pass 间通过文件通信。
 
@@ -97,12 +98,21 @@ TIMEOUT_PASS5 = {
     "compare": 600,
 }
 
+# Pass 4.5 标题优化默认配置
+CONFIG_PASS4B = {
+    "model": "sonnet",
+    "effort": "medium",
+    "tools": "Read",
+    "timeout": 120,
+}
+
 
 def _load_model_config():
     """从 topic_config.yaml 加载配置，覆盖默认值。"""
     global DEFAULT_MODEL, EFFORT_PER_PASS, TOOLS_PER_PASS, TIMEOUT_PER_PASS
     global CONSENSUS_CONFIG, EFFORT_PASS3B, TOOLS_PASS3B
     global ITERATION_CONFIG, EFFORT_PASS5, TOOLS_PASS5, TIMEOUT_PASS5
+    global CONFIG_PASS4B
     try:
         import yaml
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
@@ -130,6 +140,10 @@ def _load_model_config():
             TOOLS_PASS5.update(we["pass5_tools"])
         if we.get("pass5_timeout"):
             TIMEOUT_PASS5.update(we["pass5_timeout"])
+
+        # Pass 4.5 标题优化配置
+        if we.get("pass4b"):
+            CONFIG_PASS4B.update(we["pass4b"])
 
         # 共识循环参数
         consensus = config.get("consensus", {})
@@ -1040,6 +1054,145 @@ def run_pass4(ctx: ContextLoader, topic_dir: Path, article_draft: str,
     return success
 
 
+# ── Pass 4.5: 标题与元数据优化 ────────────────────────
+
+def _update_publish_guide(topic_dir: Path, title: str, description: str):
+    """将推荐标题和简介注入 publish_guide.md。"""
+    pg_path = topic_dir / "publish_guide.md"
+    if not pg_path.exists():
+        log.warning("publish_guide.md 不存在，跳过注入")
+        return
+
+    content = pg_path.read_text(encoding="utf-8")
+
+    # 替换或插入标题
+    title_pattern = re.compile(r"\*\*标题[：:]\*\*.*")
+    if title_pattern.search(content):
+        content = title_pattern.sub(f"**标题：** {title}", content)
+    else:
+        # 在 # 发布指南 H1 后插入
+        content = re.sub(
+            r"(# 发布指南[^\n]*\n)",
+            rf"\1\n**标题：** {title}\n",
+            content,
+            count=1,
+        )
+
+    # 替换或插入简介
+    desc_pattern = re.compile(r"\*\*简介[：:]\*\*.*")
+    if desc_pattern.search(content):
+        content = desc_pattern.sub(f"**简介：** {description}", content)
+    else:
+        # 在标题行后插入
+        content = re.sub(
+            r"(\*\*标题[：:].*\n)",
+            rf"\1**简介：** {description}\n",
+            content,
+            count=1,
+        )
+
+    pg_path.write_text(content, encoding="utf-8")
+    log.info(f"  publish_guide.md 已更新标题和简介")
+
+
+def run_pass4b(topic_dir: Path, force_title: str = None):
+    """Pass 4.5: 标题与元数据优化。
+
+    读取终稿 + 简介备选 + 当前标题，用 sonnet 生成优化标题和简介评估。
+    如果 force_title 非空，直接写入 publish_guide 跳过 LLM。
+    """
+    log.info("=" * 50)
+    log.info("Pass 4.5: 标题与元数据优化")
+    log.info("=" * 50)
+
+    # 读取终稿
+    article_path = topic_dir / "article.md"
+    if not article_path.exists():
+        log.error("article.md 不存在，跳过 Pass 4.5")
+        return
+    article_text = article_path.read_text(encoding="utf-8")
+
+    # 提取当前标题（H1）
+    current_title = ""
+    for line in article_text.split("\n"):
+        if line.startswith("# "):
+            current_title = line[2:].strip()
+            break
+
+    # 读取简介备选
+    desc_path = topic_dir / "description_options.md"
+    description_options = ""
+    if desc_path.exists():
+        description_options = desc_path.read_text(encoding="utf-8")
+
+    # 强制标题模式：直接写入，跳过 LLM
+    if force_title:
+        log.info(f"使用强制标题: {force_title}")
+        _update_publish_guide(topic_dir, force_title, "")
+        return
+
+    # 填充模板
+    template = load_prompt_template("pass4b_title_meta")
+    context = {
+        "SHARED_CONTEXT": "",  # Pass 4.5 不需要共享上下文
+        "ARTICLE_TEXT": article_text,
+        "DESCRIPTION_OPTIONS": description_options or "（无简介备选）",
+        "CURRENT_TITLE": current_title or "（无标题）",
+    }
+    prompt = fill_template(template, context)
+
+    model = CONFIG_PASS4B["model"]
+    effort = CONFIG_PASS4B["effort"]
+    tools = CONFIG_PASS4B["tools"]
+    timeout = CONFIG_PASS4B["timeout"]
+
+    output = run_claude(prompt, model, tools, effort=effort, timeout=timeout)
+
+    if not output:
+        log.error("Pass 4.5 失败: 无输出")
+        return
+
+    # 解析输出
+    parts = parse_delimited_output(
+        output, ["TITLE_OPTIONS", "DESCRIPTION_EVALUATION", "RECOMMENDED"]
+    )
+
+    # 保存完整报告
+    report_lines = [
+        f"# 标题优化报告\n",
+        f"**原标题：** {current_title}\n",
+    ]
+    if parts.get("TITLE_OPTIONS"):
+        report_lines.append(f"## 备选标题\n\n{parts['TITLE_OPTIONS']}\n")
+    if parts.get("DESCRIPTION_EVALUATION"):
+        report_lines.append(f"## 简介评估\n\n{parts['DESCRIPTION_EVALUATION']}\n")
+    if parts.get("RECOMMENDED"):
+        report_lines.append(f"## 推荐\n\n{parts['RECOMMENDED']}\n")
+
+    report = "\n".join(report_lines)
+    (topic_dir / "title_options.md").write_text(report, encoding="utf-8")
+    log.info(f"  title_options.md ({len(report)} chars)")
+
+    # 提取推荐标题和简介
+    recommended = parts.get("RECOMMENDED", "")
+    rec_title = ""
+    rec_desc = ""
+    for line in recommended.split("\n"):
+        m = re.match(r"\*\*标题[：:]\*\*\s*(.+)", line)
+        if m:
+            rec_title = m.group(1).strip()
+        m = re.match(r"\*\*简介[：:]\*\*\s*(.+)", line)
+        if m:
+            rec_desc = m.group(1).strip()
+
+    if rec_title or rec_desc:
+        _update_publish_guide(topic_dir, rec_title or current_title, rec_desc)
+        log.info(f"  推荐标题: {rec_title}")
+        log.info(f"  推荐简介: {rec_desc[:50]}...")
+    else:
+        log.warning("Pass 4.5 输出解析失败，未能提取推荐标题/简介")
+
+
 # ── 后处理：review→lessons 自动提取 ─────────────────
 
 def extract_lessons_from_review(review_report: str, series: str, topic_dir: Path):
@@ -1141,11 +1294,12 @@ def generate_cover_image(article_text: str, topic_dir: Path):
 def run_engine(topic_dir: Path, persona: str, series: str = None,
                model: str = DEFAULT_MODEL, start_pass: int = 1,
                iterate: bool = False, max_iterations: int = None,
-               consensus_rounds: int = None):
+               consensus_rounds: int = None,
+               skip_title: bool = False, force_title: str = None):
     """
     执行完整写作引擎流程。
 
-    Pass 1 → Pass 2 → Pass 3 (纯 Review) → Pass 3.5 (协商闭环) → [Pass 5 迭代求导] → Pass 4 → 后处理
+    Pass 1 → Pass 2 → Pass 3 (纯 Review) → Pass 3.5 (协商闭环) → [Pass 5 迭代求导] → Pass 4 → Pass 4.5 (标题优化) → 后处理
     """
     topic_dir = Path(topic_dir).resolve()
     if not topic_dir.exists():
@@ -1262,6 +1416,10 @@ def run_engine(topic_dir: Path, persona: str, series: str = None,
     else:
         success = True
 
+    # ── Pass 4.5: 标题与元数据优化 ──
+    if success and not skip_title:
+        run_pass4b(topic_dir, force_title=force_title)
+
     # ── 后处理 ──
     if success:
         extract_lessons_from_review(review_report, series, topic_dir)
@@ -1325,6 +1483,10 @@ def main():
                         help="迭代最大轮次（默认从 topic_config.yaml 读取）")
     parser.add_argument("--consensus-rounds", type=int, default=None,
                         help="协商轮次上限（覆盖 topic_config.yaml，默认 1）")
+    parser.add_argument("--skip-title", action="store_true",
+                        help="跳过 Pass 4.5 标题优化")
+    parser.add_argument("--title", default=None,
+                        help="强制指定标题（跳过 LLM，直接写入 publish_guide）")
 
     args = parser.parse_args()
     success = run_engine(
@@ -1336,6 +1498,8 @@ def main():
         iterate=args.iterate,
         max_iterations=args.max_iterations,
         consensus_rounds=args.consensus_rounds,
+        skip_title=args.skip_title,
+        force_title=args.title,
     )
     sys.exit(0 if success else 1)
 

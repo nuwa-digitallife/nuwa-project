@@ -1,5 +1,8 @@
 # 发布指南：从封号到核电站：一条算力链条的七级传导
 
+**标题：** Anthropic封了一批用户，封出了一条七级产业链
+**简介：** 4%的全球GitHub提交来自Claude Code，一个月前是2%。推理算力需求以1000倍速度爆炸，顺着这条链条追下去，终点是核电站选址。
+
 ## 文件清单
 
 - [ ] article.md — 终稿
@@ -24,10 +27,10 @@
 
 | 配图文件 | 插入位置 |
 |---------|---------|
-| openclaw-github.png | 引言结束后、"顺着裂缝往里看"小节之前 |
-| token-multiplier-chart.png | IDC 1000倍调用量段落之后、"1000倍的调用量向上游推"小节之前 |
-| broadcom-revenue-chart.png | Broadcom blockquote之后、"算力需求到了这个量级"小节之前 |
-| cooling-comparison.png | 液冷段落之后、"顺着链条还能再往下走"小节之前 |
+| images/openclaw-github.png | 引言结束后、"顺着裂缝往里看"小节之前 |
+| images/token-multiplier-chart.png | IDC 1000倍调用量段落之后、"1000倍的调用量向上游推"小节之前 |
+| images/broadcom-revenue-chart.png | Broadcom blockquote之后、"算力需求到了这个量级"小节之前 |
+| images/cooling-comparison.png | 液冷段落之后、"顺着链条还能再往下走"小节之前 |
 
 ## 发布步骤
 

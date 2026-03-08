@@ -130,6 +130,13 @@ models:
       fact_revise: "WebSearch,WebFetch,Read"
       verify: "Read"
     # Pass 5: 迭代求导（证据硬化循环）
+    # Pass 4.5: 标题与元数据优化
+    pass4b:
+      model: sonnet
+      effort: medium
+      tools: "Read"
+      timeout: 120
+    # Pass 5: 迭代求导（证据硬化循环）
     pass5_effort:
       weakness: high             # 证据审计需要深度思考
       targeted_research: high    # 定向调研需要推理链
