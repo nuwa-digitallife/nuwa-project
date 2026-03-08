@@ -54,7 +54,7 @@ These concepts recur throughout the docs and should be understood when editing:
 
 ## 干预日志（循环2种子）
 
-**暗号**：用户说"记下这次干预"（或"记一下干预"、"log intervention"等类似表达），立刻追加一条到 `logs/interventions.jsonl`。
+**暗号**：用户说"记下这次干预"（或"记一下干预"、"log intervention"等类似表达），立刻追加一条到对应子项目的 `logs/interventions.jsonl`（公众号→`wechat/logs/`，女娲→`logs/`）。
 
 **格式**：
 ```json
