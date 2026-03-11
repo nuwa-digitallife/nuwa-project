@@ -52,6 +52,13 @@ wechat:
   - path: "wechat/公众号选题/"
     desc: "扫描进行中选题"
     opts: "ls"
+  - path: "wechat/文学外包/README.md"
+    desc: "文学外包计划（投稿机会搜索+批量投稿）"
+  - path: "wechat/文学外包/文学方法论.md"
+    desc: "文学写作方法论（金线压缩-展开法）"
+  - path: "wechat/文学外包/投稿机会/"
+    desc: "扫描当前投稿机会"
+    opts: "ls"
 
 # ─── 未来子项目示例 ───
 # upwork:

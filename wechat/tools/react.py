@@ -127,9 +127,11 @@ URL: {url}
 {{正文内容，保留原始结构}}
 """
     try:
+        env = os.environ.copy()
+        env.pop("CLAUDECODE", None)  # 允许嵌套调用 claude -p
         proc = subprocess.run(
             ["claude", "-p", prompt, "--allowedTools", "WebFetch"],
-            capture_output=True, text=True, timeout=120,
+            capture_output=True, text=True, timeout=120, env=env,
         )
         if proc.returncode == 0 and proc.stdout.strip():
             content = proc.stdout.strip()
@@ -252,6 +254,7 @@ def main():
     parser.add_argument("--series", "-s", default="独立篇", help="系列名")
     parser.add_argument("--topic", "-t", default="", help="自定义选题名（不指定则自动提取）")
     parser.add_argument("--dry-run", action="store_true", help="只创建选题+获取原文")
+    parser.add_argument("--research-only", action="store_true", help="获取原文+深度调研，不写作")
     parser.add_argument("--skip-research", action="store_true", help="跳过深度调研")
     args = parser.parse_args()
 
@@ -293,6 +296,13 @@ def main():
         run_deep_research(topic_dir)
     else:
         log("\n--- Step 3: 跳过深度调研 ---")
+
+    if args.research_only:
+        log("\n=== RESEARCH ONLY ===")
+        log(f"Topic: {topic_name}")
+        log(f"Dir: {topic_dir}")
+        log("调研完成，跳过写作")
+        return
 
     # Step 4: 写作引擎
     log("\n--- Step 4: 写作引擎 ---")

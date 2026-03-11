@@ -39,3 +39,9 @@ TradingAgents-CN/data/*.db
 qqinvest/__pycache__/
 qqinvest/logs/*.log
 qqinvest/jobs.db
+
+# Agent PM 敏感配置
+wechat/agent/config.yaml
+
+# 文学外包敏感配置
+wechat/文学外包/identities.json
