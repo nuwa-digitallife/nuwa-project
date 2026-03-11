@@ -1,4 +1,4 @@
-<!-- 配图：顶级Agent创业公司估值气泡图，横轴ARR，纵轴估值 (images/01-valuation-bubble.png) -->
+![2024-2025年主要AI Agent公司融资额与估值对比（Harv](images/img_0_agent_funding_valuation.png)
 
 **2025年，最被讨论的AI Agent创业公司CEO，亲口否定了自己的护城河。**
 
@@ -46,7 +46,7 @@ Glean（企业内部搜索AI，估值72亿美元）在2025年下半年，ARR从1
 
 这是数据飞轮的真实形态：**不是"用户越多模型越好"这种宏大叙事，而是"每家企业的Glean越用越懂这家企业"。**
 
-<!-- 配图：Glean ARR增长曲线，2025年上下半年对比 (images/02-glean-arr.png) -->
+![Harvey ARR增长曲线（2024年$50M → 2025年底$1](images/img_1_harvey_arr_growth.png)
 
 ---
 
@@ -70,7 +70,7 @@ Cognition的ARR，从7300万美元一步跳到1.55亿美元。
 
 > 大厂在抢人才时，把用户资产留给了后来者。
 
-<!-- 配图：Windsurf 72小时事件时间线信息图 (images/03-windsurf-timeline.png) -->
+!["被收购" vs "独立生存"公司命运对比（Adept→Amazon,](images/img_2_fate_comparison.png)
 
 ---
 
@@ -116,7 +116,7 @@ Prompt，就是给AI的指令集合。如果你的产品只是帮用户管理一
 
 三条叠加的地方，是创业公司真正活下来的土壤。
 
-<!-- 配图：垂直行业壁垒矩阵，横轴"大厂进入难度"，纵轴"市场规模"，标注法律/医疗/金融/客服/编程等赛道 (images/04-barrier-matrix.png) -->
+![Agent创业三重壁垒：数据垂直度×流程耦合度×合规难度，中心标注"护](images/img_3_triple_barriers.png)
 
 ---
 
@@ -136,4 +136,16 @@ Prompt，就是给AI的指令集合。如果你的产品只是帮用户管理一
 
 **数据来源**
 
-Harvey ARR与估值：TechCrunch 2026.02.09；Harvey官方博客 Series F | Harvey $50M ARR基准：Sacra Research 2025.01.26 | Glean ARR：Fortune 2025.12.08 | Glean数据隔离架构：Glean Security & Privacy文档（glean.com/security）| Cognition/Windsurf：TechCrunch 2025.09.08；CNBC 2025.07.11；Cognition官方博客 | Cursor估值：CNBC 2025.11.13 | POC转化率：36氪《Agent 2025窄门与宽路》| Gartner估算数据：Gartner新闻稿 2025.06.25 | Google VP警告：TechCrunch 2026.02.21 | OpenClaw-Anthropic-Vercept链：Anthropic官方公告 2026.02.25 | Slack vs Teams：Business of Apps/Statista | Slack收购：Salesforce官方新闻稿 2021.07.21 | SaaStr创始人：saastr.com
+- Harvey ARR与估值：TechCrunch 2026.02.09；Harvey官方博客 Series F
+- Harvey $50M ARR基准：Sacra Research 2025.01.26
+- Glean ARR：Fortune 2025.12.08
+- Glean数据隔离架构：Glean Security & Privacy文档（glean.com/security）
+- Cognition/Windsurf：TechCrunch 2025.09.08；CNBC 2025.07.11；Cognition官方博客
+- Cursor估值：CNBC 2025.11.13
+- POC转化率：36氪《Agent 2025窄门与宽路》
+- Gartner估算数据：Gartner新闻稿 2025.06.25
+- Google VP警告：TechCrunch 2026.02.21
+- OpenClaw-Anthropic-Vercept链：Anthropic官方公告 2026.02.25
+- Slack vs Teams：Business of Apps/Statista
+- Slack收购：Salesforce官方新闻稿 2021.07.21
+- SaaStr创始人：saastr.com

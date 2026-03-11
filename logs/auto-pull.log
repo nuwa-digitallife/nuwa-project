@@ -1,0 +1,12 @@
+2026-03-08 12:54:00 FAIL: fatal: unable to access 'https://github.com/nuwa-digitallife/nuwa-project.git/': LibreSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443 
+2026-03-08 12:55:35 FAIL: Warning: Permanently added 'ssh.github.com' (ED25519) to the list of known hosts.
+git@ssh.github.com: Permission denied (publickey).
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+2026-03-08 12:55:43 FAIL: git@ssh.github.com: Permission denied (publickey).
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.

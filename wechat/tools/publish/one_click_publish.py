@@ -261,6 +261,40 @@ async def mdnice_render(md_text: str, screenshot_dir: Path = None,
         print("  Opening mdnice.com...")
         await page.goto(MDNICE_URL, wait_until="domcontentloaded", timeout=30000)
         await asyncio.sleep(3)
+
+        # 1.5 检测登录状态，未登录则等待扫码
+        needs_login = await page.evaluate("""() => {
+            const modals = document.querySelectorAll('.ant-modal-wrap');
+            for (const m of modals) {
+                if (getComputedStyle(m).display !== 'none' && m.textContent.includes('登录'))
+                    return true;
+            }
+            return !document.querySelector('.CodeMirror');
+        }""")
+        if needs_login:
+            qr_path = "/tmp/mdnice_qr_login.png"
+            await page.screenshot(path=qr_path)
+            print(f"\n{'='*50}")
+            print("⏳ mdnice 未登录，请在弹出的浏览器窗口扫码登录")
+            print(f"   截图已保存: {qr_path}")
+            print(f"{'='*50}\n")
+            max_wait, elapsed = 120, 0
+            while elapsed < max_wait:
+                await asyncio.sleep(3)
+                elapsed += 3
+                has_editor = await page.evaluate(
+                    "() => !!document.querySelector('.CodeMirror')"
+                )
+                if has_editor:
+                    print("  ✅ mdnice 登录成功！")
+                    break
+                if elapsed % 15 == 0:
+                    await page.screenshot(path=qr_path)
+                    print(f"   仍在等待扫码... ({elapsed}s/{max_wait}s)")
+            else:
+                print("  ERROR: mdnice 登录超时（120秒）", file=sys.stderr)
+                return False
+
         await _hide_modals(page)
 
         if screenshot_dir:
@@ -424,7 +458,17 @@ async def publish(topic_dir: Path, dry_run: bool = False,
 
     # 上传所有图片到微信 CDN，收集 CDN URL 映射（base64，不依赖 HTTPS 服务器）
     cdn_map = {}  # "images/xxx.png" -> "https://mmbiz.qpic.cn/..."
+    # 从 publish_guide 获取列表，同时扫描 images/ 目录补充实际存在的文件
     all_images = list(info["images"])
+    if images_dir.exists():
+        for img_file in sorted(images_dir.glob("img_*.png")):
+            rel = f"images/{img_file.name}"
+            if rel not in all_images:
+                all_images.append(rel)
+        for img_file in sorted(images_dir.glob("img_*.jpg")):
+            rel = f"images/{img_file.name}"
+            if rel not in all_images:
+                all_images.append(rel)
     if info["cover"] and info["cover"] not in all_images:
         all_images.append(info["cover"])
 
@@ -457,6 +501,23 @@ async def publish(topic_dir: Path, dry_run: bool = False,
 
     replacements = md_text.count("images/") - md_for_mdnice.count("images/")
     print(f"  Replaced {replacements} image references with CDN URLs")
+
+    # ── Step 2.5: 修复 mdnice 加粗+引号渲染 bug ──
+    # mdnice 的 markdown 解析器在 ** 紧邻引号字符时不触发粗体
+    # 例如 **"text"** 不会加粗，改用 <strong> HTML 标签
+    bold_quote_fixes = 0
+    def _fix_bold_quote(m):
+        nonlocal bold_quote_fixes
+        bold_quote_fixes += 1
+        return f"<strong>{m.group(1)}</strong>"
+    quote_chars = r'[""\u201c\u201d\u2018\u2019\u300a\u300b]'
+    md_for_mdnice = re.sub(
+        rf'\*\*({quote_chars}.*?{quote_chars})\*\*',
+        _fix_bold_quote,
+        md_for_mdnice,
+    )
+    if bold_quote_fixes:
+        print(f"  Fixed {bold_quote_fixes} bold+quote patterns for mdnice")
 
     # ── Step 3: mdnice 排版 → 富文本到剪贴板 ──
     ok = await mdnice_render(md_for_mdnice, screenshot_dir=topic_dir)
@@ -492,6 +553,10 @@ async def publish(topic_dir: Path, dry_run: bool = False,
         except Exception as e:
             print(f"  WARNING: 设置简介失败: {e}", file=sys.stderr)
         await asyncio.sleep(0.5)
+
+    # ── Step 5.5: 清理残留弹窗（防止二次运行脏状态） ──
+    print("\n--- 清理残留弹窗 ---")
+    await auto.cleanup_stale_dialogs()
 
     # ── Step 6a: 设置封面图 ──
     if info["cover"]:
@@ -544,7 +609,7 @@ async def publish(topic_dir: Path, dry_run: bool = False,
     await auto.trigger_save()
     await asyncio.sleep(3)
 
-    # ── Step 8: 验证草稿 ──
+    # ── Step 8: 验证草稿（内容级检查） ──
     print(f"\n--- 验证草稿 ---")
     draft_screenshot = str(topic_dir / "_draft_verify.png")
     found = await auto.verify_draft(info["title"], screenshot_path=draft_screenshot)
@@ -552,8 +617,31 @@ async def publish(topic_dir: Path, dry_run: bool = False,
         print(f"  VERIFIED: 草稿箱中找到文章")
     else:
         print(f"  WARNING: 草稿箱中未找到文章", file=sys.stderr)
-        # 截一下编辑器状态便于调试
         await auto.screenshot(str(topic_dir / "_editor_debug.png"))
+
+    # ── Step 8.5: 内容验证（打开编辑器检查图片和字数） ──
+    print(f"\n--- 内容验证 ---")
+    try:
+        # 在当前编辑器页面检查正文中的图片数量
+        editor_page = auto.page
+        img_count = await editor_page.evaluate("""() => {
+            const editor = document.querySelector('#js_editor') || document.querySelector('.edui-body-container') || document.querySelector('[contenteditable]');
+            if (!editor) return -1;
+            return editor.querySelectorAll('img').length;
+        }""")
+        expected_images = len([f for f in (info.get("images") or []) if not f.endswith("cover.png")])
+        print(f"  正文图片数: {img_count} (期望: {expected_images})")
+        if img_count == 0 and expected_images > 0:
+            print(f"  ⚠️ WARNING: 正文中没有图片！图片可能未嵌入", file=sys.stderr)
+        elif img_count > 0 and img_count >= expected_images:
+            print(f"  ✅ 图片数量符合预期")
+
+        # 截取编辑器正文区域用于人工复核
+        content_screenshot = str(topic_dir / "_content_verify.png")
+        await editor_page.screenshot(path=content_screenshot, full_page=True)
+        print(f"  全页截图已保存: {content_screenshot}")
+    except Exception as e:
+        print(f"  内容验证异常: {e}", file=sys.stderr)
 
     # 打开验证截图给用户看
     if os.path.exists(draft_screenshot):

@@ -37,11 +37,11 @@
 （终稿 article.md：完整文章，无 [待验证] 标记，无 [配图] 标记，格式干净）
 
 ===ARTICLE_MDNICE===
-（mdnice 版 article_mdnice.md：和终稿内容完全一致，但图片 markdown 标记替换为 HTML 注释）
-格式示例：
-- 原文：![描述](images/xxx.png)
-- mdnice版：<!-- 配图：描述 (images/xxx.png) -->
-注意：正文不含 H1 标题（微信编辑器有独立标题栏，H1 会重复）
+（mdnice 版 article_mdnice.md：和终稿内容完全一致，配图保留 markdown 图片语法）
+格式：
+- 配图：![简短有意义的描述](images/img_N_xxx.png)（描述会显示为图片说明，不要用"配图1"等无意义文字）
+- 正文不含 H1 标题（微信编辑器有独立标题栏，H1 会重复）
+- 数据来源：每条独占一行，用 `- ` 列表格式，不要用分号/竖线在一段内堆叠
 
 ===POLL===
 （投票 poll.md）

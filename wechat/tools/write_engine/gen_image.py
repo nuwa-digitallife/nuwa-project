@@ -166,6 +166,30 @@ def search_wikimedia(query: str, output_path: str, min_width: int = 800,
     return False
 
 
+# Keywords that indicate verifiable factual content — NEVER AI-generate these.
+# Must source from authoritative references instead.
+FACTUAL_KEYWORDS = [
+    # Games & board positions
+    "棋谱", "棋盘", "board position", "game record", "move ",
+    "alphago", "lee sedol", "chess position", "对局",
+    # Data & charts
+    "数据图", "chart", "graph data", "stock price", "k线", "candlestick",
+    "财报", "earnings", "revenue chart",
+    # Historical scenes
+    "历史照片", "historical photo", "archive photo",
+    # Screenshots & products
+    "截图", "screenshot", "产品界面", "UI screenshot",
+    # Maps
+    "地图", "map of",
+]
+
+
+def _is_factual_prompt(prompt: str) -> bool:
+    """Check if prompt describes verifiable factual content that should NOT be AI-generated."""
+    lower = prompt.lower()
+    return any(kw.lower() in lower for kw in FACTUAL_KEYWORDS)
+
+
 def generate_image(prompt: str, output_path: str, aspect: str = "16:9",
                    source: str = "auto", search_query: str = None):
     """Generate or find an image with fallback chain.
@@ -174,6 +198,17 @@ def generate_image(prompt: str, output_path: str, aspect: str = "16:9",
     search_query: override Wikimedia search terms (default: extract from prompt)
     """
     print(f"Prompt: {prompt[:100]}...")
+
+    # Guard: block AI generation for verifiable factual content
+    if _is_factual_prompt(prompt):
+        print(f"  ⛔ BLOCKED: Prompt contains factual content keywords. "
+              f"AI generation disabled — must source from authoritative references.",
+              file=sys.stderr)
+        if source == "gemini":
+            print("  Error: Cannot use Gemini for factual content. "
+                  "Use --source wikimedia or provide a real image.", file=sys.stderr)
+            sys.exit(1)
+        source = "wikimedia"  # Force wikimedia-only
 
     if source in ("gemini", "auto"):
         if generate_gemini(prompt, output_path, aspect):
