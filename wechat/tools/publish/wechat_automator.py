@@ -119,8 +119,31 @@ class WeChatAutomator:
             print(f"MP page ready: {page.url[:80]}")
             return True
 
-        # 可能需要扫码登录
-        print("ERROR: 未登录微信后台，请在 Chrome 中扫码登录", file=sys.stderr)
+        # 未登录，截图二维码页面并等待扫码
+        qr_screenshot = "/tmp/wechat_qr_login.png"
+        await page.screenshot(path=qr_screenshot)
+        print(f"\n{'='*50}")
+        print("⏳ 未检测到登录状态，请在手机上扫码登录微信公众平台")
+        print(f"   二维码截图已保存: {qr_screenshot}")
+        print(f"{'='*50}\n")
+
+        max_wait = 120  # 最长等待 120 秒
+        interval = 3
+        elapsed = 0
+        while elapsed < max_wait:
+            await asyncio.sleep(interval)
+            elapsed += interval
+            # 检查当前 URL 是否已跳转到带 token 的页面
+            if "token=" in page.url:
+                self.page = page
+                print(f"✅ 登录成功！MP page ready: {page.url[:80]}")
+                return True
+            # 每 15 秒重新截图，以防二维码刷新
+            if elapsed % 15 == 0:
+                await page.screenshot(path=qr_screenshot)
+                print(f"   仍在等待扫码... ({elapsed}s/{max_wait}s)")
+
+        print("ERROR: 等待扫码超时（120秒），请重试", file=sys.stderr)
         self.page = page
         return False
 
@@ -131,6 +154,53 @@ class WeChatAutomator:
             if match:
                 return match.group(1)
         return ""
+
+    async def cleanup_stale_dialogs(self):
+        """关闭所有残留的弹窗（防止二次运行时脏状态干扰）
+
+        场景：第一次发布失败后重跑，页面上残留未关闭的图片选择/原创/投票对话框，
+        它们的遮罩层会拦截后续所有点击事件。
+        """
+        if not self.page:
+            return
+        result = await self.page.evaluate("""() => {
+            let closed = 0;
+            // 方式1：点击所有可见对话框的取消/关闭按钮
+            const dialogs = document.querySelectorAll('.weui-desktop-dialog');
+            dialogs.forEach(d => {
+                const style = window.getComputedStyle(d);
+                if (style.display === 'none' || style.visibility === 'hidden') return;
+                // 优先点取消按钮（比强制隐藏更安全，不破坏 Vue 状态）
+                const cancelBtn = d.querySelector('.weui-desktop-btn_default');
+                if (cancelBtn && cancelBtn.textContent.trim() === '取消') {
+                    cancelBtn.click();
+                    closed++;
+                    return;
+                }
+                // 其次点关闭图标
+                const closeBtn = d.querySelector('.weui-desktop-dialog__close-btn, .weui-desktop-icon-close');
+                if (closeBtn) {
+                    closeBtn.click();
+                    closed++;
+                    return;
+                }
+            });
+            return closed;
+        }""")
+        if result and result > 0:
+            print(f"  Cleaned up {result} stale dialog(s)")
+            await asyncio.sleep(1)
+            # 二次清理：有些对话框关闭后会露出下层对话框
+            await self.page.evaluate("""() => {
+                const dialogs = document.querySelectorAll('.weui-desktop-dialog');
+                dialogs.forEach(d => {
+                    const style = window.getComputedStyle(d);
+                    if (style.display === 'none' || style.visibility === 'hidden') return;
+                    const cancelBtn = d.querySelector('.weui-desktop-btn_default');
+                    if (cancelBtn && cancelBtn.textContent.trim() === '取消') cancelBtn.click();
+                });
+            }""")
+            await asyncio.sleep(0.5)
 
     async def new_post(self):
         """导航到新建图文页面"""
@@ -709,9 +779,9 @@ class WeChatAutomator:
         await asyncio.sleep(2)
         return result
 
-    async def screenshot(self, output_path: str = "/tmp/wechat_editor.png"):
-        """截图当前页面"""
-        await self.page.screenshot(path=output_path, full_page=False)
+    async def screenshot(self, output_path: str = "/tmp/wechat_editor.png", full_page: bool = True):
+        """截图当前页面（默认长截图）"""
+        await self.page.screenshot(path=output_path, full_page=full_page)
         print(f"Screenshot: {output_path}")
         return output_path
 
@@ -764,7 +834,7 @@ class WeChatAutomator:
 
         if screenshot_path:
             try:
-                await page.screenshot(path=screenshot_path)
+                await page.screenshot(path=screenshot_path, full_page=True)
             except Exception:
                 pass
 

@@ -52,6 +52,24 @@ These concepts recur throughout the docs and should be understood when editing:
 
 **公众号写作会话额外读**：人设档案 + experience.jsonl + 系列 lessons.md + 已发文章（详见 MEMORY.md 的 startup-guide）
 
+## 核心工程公理
+
+### 🔴 修根因，不修症状（Root Cause Fix Axiom）
+
+**发现问题时，必须追溯到生产该输出的代码/配置/prompt，修那里。直接修输出文件是无效的——下次生产还会犯同样的错。**
+
+检查清单：
+1. 这个错误是哪段代码/prompt 产出的？
+2. 修了那段代码后，下次运行能自动产出正确结果吗？
+3. 如果不能，还有更上游的根因没修到。
+
+反例（禁止）：文章数据来源格式不对 → 手动编辑 article_mdnice.md → ❌ 下篇文章还会错
+正例（要求）：文章数据来源格式不对 → 修 pass4_integrate.md prompt → 修 engine.py 后处理 → ✅ 下篇自动正确
+
+**这条公理同时适用于女娲计划的所有子项目：永远修生成器，不修生成物。**
+
+---
+
 ## 干预日志（循环2种子）
 
 **暗号**：用户说"记下这次干预"（或"记一下干预"、"log intervention"等类似表达），立刻追加一条到对应子项目的 `logs/interventions.jsonl`（公众号→`wechat/logs/`，女娲→`logs/`）。

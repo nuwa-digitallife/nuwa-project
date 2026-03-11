@@ -113,6 +113,29 @@ def build_research_prompt(topic: str, existing_materials: str) -> str:
    - 产品参数、技术指标
    - 时间线和关键日期
 
+### ⛔ 覆盖审计（必做，不可跳过）
+搜索完成后，**在输出素材报告之前**，必须执行以下三步自检：
+
+**Step A — 权威基准对照**：
+1. 搜索 "[选题] 综述/overview/comprehensive guide" 和 "[topic] key players/timeline/analysis"
+2. 找到 2-3 篇该话题的权威综合分析（权威媒体长文、行业报告、学术综述）
+3. 对比它们覆盖的实体（人物/公司/事件/技术/地理区域）与你已采集的素材
+4. 列出差异清单：哪些它们提到而你没有？
+
+**Step B — 对抗性自查**：
+1. 问自己："如果这个领域的专家看我的素材清单，他会说我漏了什么？"
+2. 识别相邻术语/概念（例：搜"世界模型"后应扩展搜"spatial intelligence"、"3D generation"等），确保不因术语差异遗漏重要内容
+3. 对 Step A 和 Step B 发现的每个缺口，执行至少一轮针对性补充搜索
+
+**Step C — 时效性核查**：
+1. 列出素材中所有关键实体（公司/产品/人物/技术）
+2. 对每个实体搜索 "[实体名] latest 2026" 和 "[实体名] 最新进展"
+3. 对比搜索结果与已采集素材：产品是否有新版本？公司是否有新融资/新动态？人物是否有新动向？
+4. 发现过期信息 → **直接用最新数据替换旧数据**，不保留过期条目
+5. 在审计记录中标注替换内容，例："`Genie 2 → Genie 3 (2025-08发布)，已替换`"
+
+只有确认三步审计全部通过（无重大缺口、无过期信息），才能输出最终素材报告。在素材报告末尾附上「覆盖审计记录」：列出对照了哪些权威来源、发现了哪些缺口、如何补充、哪些数据做了时效性更新。
+
 ### 一手源追溯原则
 - 看到"据报道某公司做了X" → 搜该公司官方公告
 - 看到"某论文提出了Y" → 搜 arXiv 原文
@@ -154,6 +177,131 @@ def build_research_prompt(topic: str, existing_materials: str) -> str:
 ## 潜在配图素材
 （截图/数据图/对比图的建议，标注来源URL）
 """
+
+
+def build_audit_prompt(topic: str, materials: str) -> str:
+    """构造独立审计 prompt——代码强制的第二步验证。"""
+    return f"""你是一个素材审计员。你的唯一任务是核查以下素材报告的**覆盖完整性**和**时效性**。
+
+## 选题
+{topic}
+
+## 待审计素材
+{materials[:15000]}
+
+## 审计步骤（必须全部执行）
+
+### Step 1 — 提取关键实体
+从素材中提取所有关键实体（公司、产品、人物、技术、模型名称）。列出清单。
+
+### Step 2 — 覆盖检查
+搜索 "[选题] overview/综述 2026" 和 "[topic] key players/主要公司"。
+找到 2-3 篇权威综合分析，对比它们提到的实体与素材清单。
+**列出素材中缺失的重要实体。**
+
+### Step 3 — 时效性检查
+对素材中每个关键实体，搜索 "[实体名] latest news 2026" 或 "[实体名] 最新"。
+检查：
+- 产品是否有新版本？（如 Genie 2 → Genie 3）
+- 公司是否有新融资、新估值？
+- 人物是否有新动向？
+- 数据是否有更新？
+
+**列出所有过期信息，标注旧值和新值。**
+
+## 输出格式
+
+# 审计报告：{topic}
+
+## 关键实体清单
+（从素材中提取的实体列表）
+
+## 覆盖检查结果
+✅ 已覆盖：...
+⚠️ 需要补充：...（列出缺失实体及理由）
+
+## 时效性检查结果
+✅ 最新：...（实体名 + 确认信息）
+⚠️ 需要更新：...（实体名 + 旧值 → 新值 + 信源URL）
+
+## 审计结论
+PASS / FAIL（FAIL = 有任何"⚠️ 需要补充"或"⚠️ 需要更新"）
+"""
+
+
+def build_patch_prompt(topic: str, materials: str, audit: str) -> str:
+    """根据审计结果构造补充采集 prompt。"""
+    return f"""你是素材补充采集员。审计发现以下素材有缺口或过期信息，你需要补充。
+
+## 选题
+{topic}
+
+## 审计报告（重点关注 ⚠️ 标记的条目）
+{audit}
+
+## 原始素材
+{materials[:15000]}
+
+## 任务
+1. 对审计报告中每个 "⚠️ 需要补充" 的实体，搜索并采集相关素材
+2. 对审计报告中每个 "⚠️ 需要更新" 的实体，搜索最新数据替换旧数据
+3. 将补充内容合并到原始素材中，输出完整的更新版素材报告
+
+## 输出
+输出**完整的更新后素材报告**（不是增量，是替换原始报告的完整版本）。
+在末尾附上「审计更新记录」：列出补充了什么、更新了什么。
+"""
+
+
+def run_audit(topic: str, materials: str, model: str = DEFAULT_MODEL) -> str | None:
+    """运行独立审计 agent，返回审计报告文本。"""
+    from engine import run_claude_with_retry
+
+    prompt = build_audit_prompt(topic, materials)
+    cmd = [
+        "claude", "-p",
+        "--model", model,
+        "--allowedTools", DEFAULT_TOOLS,
+        "--effort", "medium",  # 审计不需要 high effort
+        "--no-session-persistence",
+    ]
+    log.info("  调用审计 agent...")
+    result = run_claude_with_retry(cmd, prompt, DEFAULT_TIMEOUT, logger=log)
+    if result is None or result.returncode != 0:
+        log.error("  审计 agent 失败")
+        return None
+    output = result.stdout.strip()
+    if not output:
+        log.error("  审计 agent 无输出")
+        return None
+    log.info(f"  审计完成 ({len(output)} chars)")
+    return output
+
+
+def run_patch(topic: str, materials: str, audit: str,
+              model: str = DEFAULT_MODEL) -> str | None:
+    """根据审计结果补充采集，返回更新后的完整素材。"""
+    from engine import run_claude_with_retry
+
+    prompt = build_patch_prompt(topic, materials, audit)
+    cmd = [
+        "claude", "-p",
+        "--model", model,
+        "--allowedTools", DEFAULT_TOOLS,
+        "--effort", "high",
+        "--no-session-persistence",
+    ]
+    log.info("  调用补充采集 agent...")
+    result = run_claude_with_retry(cmd, prompt, DEFAULT_TIMEOUT, logger=log)
+    if result is None or result.returncode != 0:
+        log.error("  补充采集 agent 失败")
+        return None
+    output = result.stdout.strip()
+    if not output:
+        log.error("  补充采集 agent 无输出")
+        return None
+    log.info(f"  补充采集完成 ({len(output)} chars)")
+    return output
 
 
 def run_research(topic_dir: Path, topic: str = None, model: str = DEFAULT_MODEL,
@@ -208,6 +356,28 @@ def run_research(topic_dir: Path, topic: str = None, model: str = DEFAULT_MODEL,
     if not output:
         log.error("  无输出")
         return False
+
+    # ── 独立验证步骤：覆盖+时效性核查 ──
+    # 不依赖主 agent 的自查（prompt 是软约束），用代码强制跑第二个 agent
+    log.info("  开始独立验证（覆盖+时效性核查）...")
+    audit_result = run_audit(topic, output, model=model)
+    if audit_result:
+        audit_path = topic_dir / "素材" / "audit_report.md"
+        topic_dir.joinpath("素材").mkdir(exist_ok=True)
+        audit_path.write_text(audit_result, encoding="utf-8")
+        log.info(f"  审计报告已保存: {audit_path}")
+
+        # 检查是否有需要更新的内容
+        if "⚠️ 需要更新" in audit_result or "⚠️ 需要补充" in audit_result:
+            log.warning("  审计发现过期或缺失内容，执行补充采集...")
+            patched = run_patch(topic, output, audit_result, model=model)
+            if patched:
+                output = patched
+                log.info("  ✅ 素材已根据审计结果更新")
+            else:
+                log.warning("  补充采集失败，使用原始素材（审计报告已保存供人工检查）")
+    else:
+        log.warning("  审计步骤失败，素材将保存但标记为未审计")
 
     # 保存素材报告
     materials_dir = topic_dir / "素材"

@@ -1,57 +1,45 @@
-# 发布指南：世界模型到底是什么：三家说的根本不是一件事
+# 发布指南：世界模型
 
-**标题：** OpenAI、Meta、NVIDIA说的"世界模型"，根本不是同一件事
-**简介：** 所有人都在说世界模型，但OpenAI、Meta、NVIDIA说的根本不是同一件事。Sora有文献记录的物理失败，V-JEPA 2用62小时录像达到65-80%机器人成功率，LeCun离开Meta押注35亿估值新公司——三条路线，三种信仰，一张祛魅地图。
+**标题：** OpenAI、Google、Meta、NVIDIA、李飞飞说的"世界模型"，是四件不同的事
+**简介：** "世界模型"这个词同时指向四件不同的事——抽象预测、视频生成、3D空间、专用模拟器。三个月融了45亿美元，估值总和超220亿，大多数还没有规模化收入。四条路线，四种信仰，没有一条同时做到对的、快的、可泛化的。
 
 ## 文件清单
 
-- [ ] article.md — 终稿
+- [x] article.md — 终稿（已重写，含Google/李飞飞/最新数据）
 - [ ] article_mdnice.md — mdnice排版版
-- [ ] poll.md — 投票
 - [ ] images/cover.png — 封面图（900x383，不含标题文字）
-- [ ] images/01_sora_frame.png — Sora生成视频截帧（OpenAI官方发布材料）
-- [ ] images/02_three_routes.png — 三条路线对比框图
-- [ ] images/03_lecun.png — LeCun近期公开演讲图
+- [ ] images/img_1_sora_physics_errors.png — Sora物理错误截图拼图（已有，可复用）
+- [ ] images/img_2_marble_screenshot.png — World Labs Marble产品截图
+- [ ] images/img_3_project_genie_screenshot.png — Google Project Genie产品截图
+- [ ] images/img_4_four_routes_comparison.png — 四条路线对比图（自制逻辑图）
+- [ ] images/img_5_valuations_chart.png — 估值/融资对比图（自制数据图）
+- [x] poll.md — 投票
 
 ## 配图位置
 
-| 图片 | 对应位置 |
+| 图片 | 文中位置 |
 |------|---------|
-| images/01_sora_frame.png | "Sora出来那天，所有人都觉得世界模型来了。"小标题正上方 |
-| images/02_three_routes.png | 路线三（Cosmos/Wayve段）正下方，"三条路线的分歧不是学术争论"小标题正上方 |
-| images/03_lecun.png | AMI Labs段，"我的推断是"段落正下方 |
+| img_1_sora_physics_errors.png | [配图：Sora生成视频中的物理错误截图] |
+| img_2_marble_screenshot.png | [配图：World Labs Marble产品截图] |
+| img_3_project_genie_screenshot.png | [配图：Google Project Genie产品截图] |
+| img_4_four_routes_comparison.png | [配图：四条路线对比示意图] |
+| img_5_valuations_chart.png | [配图：世界模型赛道融资与估值对比] |
 
-## 配图获取说明
+## 简介备选（每个≤120字）
 
-- **Sora截帧**：openai.com/sora 官方页面截图，或OpenAI社交媒体发布的宣传视频帧
-- **三条路线框图**：需自制（简单箭头图），工具推荐：Excalidraw或Canva。三栏：JEPA（抽象空间预测）/ Sora-Genie（像素空间预测）/ Cosmos（专用物理场景生成）
-- **LeCun图**：优先选AMI Labs官方发布材料或LeCun本人X账号发布的图片；若均无，选2026年后的第三方媒体新闻配图
+1. "世界模型"这个词同时指向四件不同的事——抽象预测、视频生成、3D空间、专用模拟器。三个月融了45亿美元，估值总和超220亿，大多数还没有规模化收入。四条路线，四种信仰，没有一条同时做到对的、快的、可泛化的。
 
-## 简介（3个备选，每个≤70字）
-
-1. 所有人都在说世界模型，但OpenAI、Meta、NVIDIA说的根本不是同一件事。Sora有文献记录的物理失败，V-JEPA 2用62小时录像达到65-80%机器人成功率，LeCun离开Meta押注35亿估值新公司——三条路线，三种信仰，一张祛魅地图。
-
-2. "世界模型"这个词现在同时指向三件不同的事：预测抽象状态（Meta JEPA）、预测像素（Sora）、生成专用训练数据（NVIDIA Cosmos）。选哪条，背后是工程取舍——没有一条同时做到对的、快的、可泛化的。LeCun为此离开Meta自己创业了。
-
-3. LeCun多年前就判定像素级视频预测"doomed to failure"，Sora发布只是让他又说了一遍。两年后他离开Meta，用职业下半段押注自己的路线，估值目标35亿美元，产品还没有。世界模型这个词正处于热度顶点和能力底部的交叉口。
+2. LeCun拿了10亿种子轮说LLM是死路，李飞飞拿了12亿说关键在3D空间，Google做出了可以走进去的虚拟世界，Sora升级后留存率只有1%。世界模型赛道三个月烧了45亿美元——它们说的根本不是同一件事。
 
 ## 发布步骤
 
-1. 将 article_mdnice.md 粘贴到 mdnice.com 排版（选择与公众号风格匹配的主题）
-2. 从 mdnice 复制排版后的内容到微信编辑器
-3. 按配图位置逐个上传图片到对应位置
-4. 设置封面图（900x383），确认不含标题文字
-5. 填写文章标题：世界模型到底是什么：三家说的根本不是一件事
-6. 填写简介（从上面3个备选中选1个）
-7. 创建投票（从 poll.md 复制，不设截止日期）
-8. 勾选原创声明（文字原创）
-9. 开启赞赏
-10. 预览确认排版、图片、投票 → 保存草稿
-11. 扫码发布
+1. 运行 one_click_publish.py 自动完成排版+上传+发布
+2. 投票从 poll.md 复制，不设截止日期
+3. 原创声明（文字原创）
+4. 开启赞赏
 
 ## 注意事项
 
 - 封面图不放文字（微信会自动叠加标题）
 - 投票不设截止日期
-- 发布后无法补加投票，必须发布前在编辑器内确认投票已创建
-- 三条路线框图如需自制，保持极简：三栏 + 核心关键词 + 单向箭头，不加多余说明文字
+- mdnice正文不含H1标题
