@@ -1,0 +1,17 @@
+编辑老师好，
+
+附件为{genre}《{title}》，约{char_count}字，原创首发。
+如需修改或有其他要求，烦请告知。
+
+全文如下：
+
+---
+
+{article_text}
+
+---
+
+{pen_name}
+电话：{contact}
+地址：{address}
+简介：{bio}

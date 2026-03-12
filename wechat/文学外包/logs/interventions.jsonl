@@ -1,0 +1,3 @@
+{"timestamp": "2026-03-12T08:10:00", "action": "Mac Mini 远程登录关闭", "target": "部署环境", "trigger": "用户昨天关闭了 Mac Mini 远程登录，Agent 暂时部署在本机"}
+{"timestamp": "2026-03-12T08:10:01", "action": "要求 devlog 按项目分开", "target": "日志系统", "trigger": "公众号和文学外包的经验不应混在一起，各自维护 logs/devlog.jsonl"}
+{"timestamp": "2026-03-12T08:10:02", "action": "要求通过 Telegram 交互写第二篇", "target": "工作流", "trigger": "用户希望用 Agent 的 Telegram 交互模式（而非 Claude Code 对话）来驱动第二篇写作"}
