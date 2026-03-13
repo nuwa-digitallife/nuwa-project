@@ -619,29 +619,110 @@ async def publish(topic_dir: Path, dry_run: bool = False,
         print(f"  WARNING: 草稿箱中未找到文章", file=sys.stderr)
         await auto.screenshot(str(topic_dir / "_editor_debug.png"))
 
-    # ── Step 8.5: 内容验证（打开编辑器检查图片和字数） ──
+    # ── Step 8.5: 内容验证（正文+配图，带等待重试） ──
     print(f"\n--- 内容验证 ---")
+    verify_ok = True
     try:
-        # 在当前编辑器页面检查正文中的图片数量
         editor_page = auto.page
-        img_count = await editor_page.evaluate("""() => {
-            const editor = document.querySelector('#js_editor') || document.querySelector('.edui-body-container') || document.querySelector('[contenteditable]');
-            if (!editor) return -1;
-            return editor.querySelectorAll('img').length;
-        }""")
-        expected_images = len([f for f in (info.get("images") or []) if not f.endswith("cover.png")])
-        print(f"  正文图片数: {img_count} (期望: {expected_images})")
-        if img_count == 0 and expected_images > 0:
-            print(f"  ⚠️ WARNING: 正文中没有图片！图片可能未嵌入", file=sys.stderr)
-        elif img_count > 0 and img_count >= expected_images:
-            print(f"  ✅ 图片数量符合预期")
 
-        # 截取编辑器正文区域用于人工复核
+        # --- 正文验证：从 article_mdnice.md 抽关键句，等待编辑器渲染 ---
+        lines = md_text.split("\n")
+        non_empty = [l.strip() for l in lines if l.strip() and not l.strip().startswith("!")]
+        # 抽首段、中间、末段各一句作为探针（去掉 markdown 格式标记）
+        probes = []
+        for idx in [1, len(non_empty) // 2, -2]:
+            if abs(idx) < len(non_empty):
+                probe = non_empty[idx].strip("*#>- ").replace("**", "")[:40]
+                if len(probe) > 10:
+                    probes.append(probe)
+
+        text_ok = False
+        for attempt in range(5):  # 最多等 10s
+            editor_text = await editor_page.evaluate("""() => {
+                const el = document.querySelector('#js_editor')
+                    || document.querySelector('.edui-body-container')
+                    || document.querySelector('[contenteditable]');
+                return el ? el.innerText.substring(0, 5000) : '';
+            }""")
+            matched = sum(1 for p in probes if p in editor_text)
+            if matched >= max(1, len(probes) - 1):
+                text_ok = True
+                break
+            await asyncio.sleep(2)
+
+        if text_ok:
+            print(f"  ✅ 正文验证通过（{matched}/{len(probes)} 探针匹配）")
+        else:
+            print(f"  ❌ 正文验证失败：只匹配 {matched}/{len(probes)} 探针", file=sys.stderr)
+            for p in probes:
+                hit = "✓" if p in editor_text else "✗"
+                print(f"     {hit} \"{p[:30]}...\"")
+            verify_ok = False
+
+        # --- 配图验证：等待图片加载，检查 naturalWidth > 0 ---
+        expected_images = len([f for f in (info.get("images") or []) if not f.endswith("cover.png")])
+        loaded_count = 0
+        for attempt in range(5):  # 最多等 15s
+            loaded_count = await editor_page.evaluate("""() => {
+                const el = document.querySelector('#js_editor')
+                    || document.querySelector('.edui-body-container')
+                    || document.querySelector('[contenteditable]');
+                if (!el) return 0;
+                const imgs = el.querySelectorAll('img');
+                let loaded = 0;
+                for (const img of imgs) {
+                    if (img.naturalWidth > 0 && img.src.includes('mmbiz')) loaded++;
+                }
+                return loaded;
+            }""")
+            if loaded_count >= expected_images:
+                break
+            await asyncio.sleep(3)
+
+        total_imgs = await editor_page.evaluate("""() => {
+            const el = document.querySelector('#js_editor')
+                || document.querySelector('.edui-body-container')
+                || document.querySelector('[contenteditable]');
+            return el ? el.querySelectorAll('img').length : 0;
+        }""")
+
+        if loaded_count >= expected_images:
+            print(f"  ✅ 配图验证通过（{loaded_count} 张加载成功，共 {total_imgs} 张 img 标签）")
+        else:
+            print(f"  ❌ 配图验证失败：{loaded_count}/{expected_images} 张加载成功（共 {total_imgs} 张 img）", file=sys.stderr)
+            verify_ok = False
+
+        # --- 逐屏截图：滚动编辑器，每屏截一张 ---
+        scroll_shots = await editor_page.evaluate("""() => {
+            const el = document.querySelector('#js_editor')
+                || document.querySelector('.edui-body-container')
+                || document.querySelector('[contenteditable]');
+            if (!el) return {scrollHeight: 0, clientHeight: 0};
+            return {scrollHeight: el.scrollHeight, clientHeight: el.clientHeight || 600};
+        }""")
+        scroll_h = scroll_shots.get("scrollHeight", 0)
+        client_h = scroll_shots.get("clientHeight", 600) or 600
+        num_screens = max(1, min(10, (scroll_h + client_h - 1) // client_h))
+
+        for i in range(num_screens):
+            await editor_page.evaluate(f"""() => {{
+                const el = document.querySelector('#js_editor')
+                    || document.querySelector('.edui-body-container')
+                    || document.querySelector('[contenteditable]');
+                if (el) el.scrollTop = {i * client_h};
+            }}""")
+            await asyncio.sleep(0.5)
+            shot_path = str(topic_dir / f"_verify_{i+1:02d}.png")
+            await editor_page.screenshot(path=shot_path)
+        print(f"  📸 逐屏截图: {num_screens} 张 (_verify_01.png ~ _verify_{num_screens:02d}.png)")
+
+        # 全页截图（兜底）
         content_screenshot = str(topic_dir / "_content_verify.png")
         await editor_page.screenshot(path=content_screenshot, full_page=True)
-        print(f"  全页截图已保存: {content_screenshot}")
+
     except Exception as e:
         print(f"  内容验证异常: {e}", file=sys.stderr)
+        verify_ok = False
 
     # 打开验证截图给用户看
     if os.path.exists(draft_screenshot):
@@ -662,14 +743,16 @@ async def publish(topic_dir: Path, dry_run: bool = False,
         pass
 
     print(f"\n{'='*60}")
-    if found:
-        print(f"DONE: 草稿已保存到微信后台")
+    if found and verify_ok:
+        print(f"DONE: 草稿已保存，正文+配图验证通过")
+    elif found and not verify_ok:
+        print(f"WARNING: 草稿已保存，但正文/配图验证未通过，请手动检查")
     else:
-        print(f"WARNING: 草稿可能未保存，请手动检查")
+        print(f"FAIL: 草稿可能未保存，请手动检查")
     print(f"验证截图: {draft_screenshot}")
-    print(f"完成项: 标题/简介/图片/投票/原创/赞赏/封面/保存")
+    print(f"逐屏截图: {topic_dir}/_verify_*.png")
     print(f"{'='*60}")
-    return 0 if found else 1
+    return 0 if (found and verify_ok) else 1
 
 
 def main():
