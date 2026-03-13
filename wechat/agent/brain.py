@@ -68,8 +68,29 @@ class Brain:
             self.last_reset = today
         return self.think_count < self.think_limit
 
+    # ── Intent classification ─────────────────────────────────
+    # Subclass can override INTENT_KEYWORDS to add domain-specific intents.
+    # "general" is the fallback — keep its keyword list empty.
+    INTENT_KEYWORDS: dict[str, list[str]] = {
+        "general": [],
+    }
+
+    def _classify_intent(self, signals: list[dict]) -> str:
+        """Keyword-based intent classification. No LLM call, pure string match."""
+        text = " ".join(s.get("content", "") for s in signals)
+        for intent, keywords in self.INTENT_KEYWORDS.items():
+            if intent == "general":
+                continue
+            if any(kw in text for kw in keywords):
+                return intent
+        return "general"
+
+    # ── Prompt building ────────────────────────────────────────
+
     def _build_prompt(self, state_summary: str, memory_summary: str,
-                      signals: list[dict], skills_desc: str) -> str:
+                      signals: list[dict], skills_desc: str,
+                      intent: str = "general",
+                      chat_history: str = "") -> str:
         signals_md = "\n".join(
             f"- [{s.get('type', '?')}] {s.get('content', '')}"
             for s in signals
@@ -119,23 +140,32 @@ class Brain:
 """
 
     def think(self, state_summary: str, memory_summary: str,
-              signals: list[dict], skills_desc: str) -> BrainAction:
+              signals: list[dict], skills_desc: str,
+              chat_history: str = "") -> BrainAction:
         """One reasoning step. Stateless — all context in params."""
         if not self._check_budget():
             logger.warning("Daily think budget exhausted (%d/%d)",
                            self.think_count, self.think_limit)
             return BrainAction.idle("今日推理次数已达上限，进入休眠。")
 
+        intent = self._classify_intent(signals)
         prompt = self._build_prompt(state_summary, memory_summary,
-                                     signals, skills_desc)
+                                     signals, skills_desc, intent=intent,
+                                     chat_history=chat_history)
+        logger.info("Brain think: intent=%s, prompt_len=%d chars", intent, len(prompt))
 
         try:
             result = self._call_llm(prompt)
             self.think_count += 1
             return self._parse_action(result)
+        except subprocess.TimeoutExpired:
+            logger.error("Brain think timeout (intent=%s, prompt_len=%d)", intent, len(prompt))
+            return BrainAction.idle("推理超时，请重试。")
         except Exception as e:
-            logger.error("Brain think error: %s", e)
-            return BrainAction.idle(f"推理出错: {e}")
+            # Truncate error — never leak full prompt into reason
+            err_msg = str(e)[:200]
+            logger.error("Brain think error: %s", err_msg)
+            return BrainAction.idle(f"推理出错: {err_msg}")
 
     def _call_llm(self, prompt: str) -> str:
         if self.backend == "cli":

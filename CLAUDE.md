@@ -68,6 +68,14 @@ These concepts recur throughout the docs and should be understood when editing:
 
 **这条公理同时适用于女娲计划的所有子项目：永远修生成器，不修生成物。**
 
+### 🔴 Agent LLM 选型下限：sonnet
+
+任何需要"思考"的步骤（文件定位、编辑生成、意图分类等）至少用 sonnet。haiku 判断力不够，省的 token 不值返工成本。
+
+### 🔴 性能问题修根因，不截断
+
+prompt 太长导致 LLM 慢 → 找哪个文件/内容不该被加载，而不是一刀切截断所有文件。截断是掩盖问题，定位多余输入才是根因。
+
 ---
 
 ## 干预日志（循环2种子）

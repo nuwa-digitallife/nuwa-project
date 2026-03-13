@@ -26,3 +26,5 @@ shell-init: error retrieving current directory: getcwd: cannot access parent dir
 /bin/bash: /Users/ciwang/Desktop/nuwa-project/wechat/tools/run_pipeline.sh: Operation not permitted
 shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
 /bin/bash: /Users/ciwang/Desktop/nuwa-project/wechat/tools/run_pipeline.sh: Operation not permitted
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: /Users/ciwang/Desktop/nuwa-project/wechat/tools/run_pipeline.sh: Operation not permitted

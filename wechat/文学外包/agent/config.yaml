@@ -7,7 +7,7 @@ telegram:
 
 brain:
   backend: "cli"            # "cli" (claude -p) or "api"
-  think_model: "haiku"      # 快速推理
+  think_model: "sonnet"     # 用户偏好：最低 sonnet
   identity: "文学编辑 Agent" # Brain prompt 中的自我身份
   methodology_summary_chars: 3000  # 注入方法论摘要的字符上限
 
@@ -32,3 +32,5 @@ paths:
   corrections_file: "~/Desktop/nuwa-project/wechat/文学外包/agent/corrections.jsonl"
   methodology_file: "~/Desktop/nuwa-project/wechat/文学外包/文学方法论.md"
   logs_dir: "~/Desktop/nuwa-project/wechat/文学外包/agent/logs"
+  search_methodology_file: "~/Desktop/nuwa-project/wechat/文学外包/投稿机会/搜索方法论.md"
+  search_log_file: "~/Desktop/nuwa-project/wechat/文学外包/投稿机会/搜索日志.jsonl"

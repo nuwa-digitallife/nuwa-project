@@ -18,6 +18,7 @@ import asyncio
 import json
 import logging
 import sys
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -60,7 +61,24 @@ class RunningTask:
 
 
 class EditorBrain(Brain):
-    """Extended Brain that injects methodology + corrections into prompt."""
+    """Extended Brain with intent-aware context injection.
+
+    Intent classification (keyword match, no LLM call):
+      writing    — 需要方法论 + 纠正记录 + 稿件状态
+      opportunity — 需要稿件状态（机会相关）
+      general    — 最小上下文：公理 + 信号 + 技能列表
+    """
+
+    # Intent → keywords mapping (checked in order, first match wins)
+    INTENT_KEYWORDS = {
+        "writing": ["写", "改稿", "金线", "压缩", "展开", "初稿", "终稿",
+                     "重写", "修改稿", "方法论", "6C", "陈言"],
+        "opportunity": ["机会", "投稿", "征文", "刊物", "数据库", "机会库",
+                         "投什么", "征稿", "首发", "一稿多投"],
+        "intervene": ["修改", "改一下", "更新下", "加上", "删掉", "改代码",
+                       "把", "改成", "标记为", "设为", "改下"],
+        "general": [],
+    }
 
     def __init__(self, config: dict, axioms_path: str,
                  methodology_path: str = "", corrections_path: str = ""):
@@ -72,15 +90,14 @@ class EditorBrain(Brain):
     def _load_methodology_summary(self) -> str:
         """Load a condensed version of the methodology for Brain context."""
         if not self.methodology_path or not self.methodology_path.exists():
-            return "方法论文件未找到。"
+            return ""
         content = self.methodology_path.read_text()
-        # Take first N chars as summary (covers core principles)
         return content[:self.methodology_chars]
 
-    def _load_recent_corrections(self, n: int = 10) -> str:
+    def _load_recent_corrections(self, n: int = 5) -> str:
         """Load recent user corrections for Brain context."""
         if not self.corrections_path or not self.corrections_path.exists():
-            return "暂无纠正记录。"
+            return ""
         records = []
         with open(self.corrections_path, "r") as f:
             for line in f:
@@ -88,79 +105,68 @@ class EditorBrain(Brain):
                 if line:
                     records.append(json.loads(line))
         if not records:
-            return "暂无纠正记录。"
+            return ""
         recent = records[-n:]
         lines = []
         for r in recent:
             ms = r.get("manuscript_id", "?")
             correction = r.get("correction", "")
             learned = r.get("agent_learned", "")
-            lines.append(f"- [{ms}] 纠正: {correction}")
+            lines.append(f"- [{ms}] {correction}")
             if learned:
                 lines.append(f"  学到: {learned}")
         return "\n".join(lines)
 
     def _build_prompt(self, state_summary: str, memory_summary: str,
-                      signals: list[dict], skills_desc: str) -> str:
-        """Override to inject methodology + corrections."""
+                      signals: list[dict], skills_desc: str,
+                      intent: str = "general",
+                      chat_history: str = "") -> str:
+        """Intent-aware prompt: only inject context the intent actually needs."""
         signals_md = "\n".join(
             f"- [{s.get('type', '?')}] {s.get('content', '')}"
             for s in signals
         ) if signals else "无新信号。"
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
-        methodology = self._load_methodology_summary()
-        corrections = self._load_recent_corrections()
 
-        return f"""# 你的身份
+        # ── Always included (minimal core) ───────────────────
+        sections = [
+            f"# 身份\n文学编辑 Agent。{now}",
+            f"# 公理\n{self.axioms}",
+        ]
 
-你是文学编辑 Agent，负责从选题到投稿的全流程管理。当前时间：{now}
+        # ── Conversation history (always include if available) ──
+        if chat_history:
+            sections.append(f"# 最近对话\n{chat_history}")
 
-# 你的公理
+        sections.append(f"# 新信号\n{signals_md}")
 
-{self.axioms}
+        # ── Conditionally included by intent ─────────────────
+        if intent == "writing":
+            methodology = self._load_methodology_summary()
+            if methodology:
+                sections.append(f"# 文学方法论（摘要）\n{methodology}")
+            corrections = self._load_recent_corrections()
+            if corrections:
+                sections.append(f"# 用户纠正\n{corrections}")
+            sections.append(f"# 稿件状态\n{state_summary}")
+            sections.append(f"# 行动路径\n{memory_summary}")
+        elif intent == "opportunity":
+            sections.append(f"# 稿件状态\n{state_summary}")
+        elif intent == "intervene":
+            sections.append(f"# 稿件状态\n{state_summary}")
+        # "general": no extra context — axioms + signal + skills is enough
 
-# 文学方法论（你的圣经，摘要）
+        sections.append(f"# 可用技能\n{skills_desc}")
+        sections.append(
+            "# 指令\n"
+            "根据信号决定下一步。输出严格 JSON（不要 markdown 代码块）：\n"
+            f'{{"skill": "技能名", "params": {{}}, "reason": "一句话", "priority": 0}}\n'
+            "无事可做则 skill=idle。\n"
+            "注意：awaiting 非空时不催促；用户消息优先处理。"
+        )
 
-{methodology}
-
-# 最近的用户纠正（你必须学习这些）
-
-{corrections}
-
-# 当前稿件状态
-
-{state_summary}
-
-# 最近行动路径
-
-{memory_summary}
-
-# 新信号
-
-{signals_md}
-
-# 可用技能
-
-{skills_desc}
-
-# 指令
-
-根据上述信息，决定你的下一步行动。
-
-输出严格 JSON（不要 markdown 代码块）：
-{{"skill": "技能名", "params": {{}}, "reason": "一句话理由", "priority": 0}}
-
-如果当前没有需要处理的事项，输出：
-{{"skill": "idle", "params": {{}}, "reason": "原因", "priority": 0}}
-
-注意：
-- 如果有稿件等待用户确认（awaiting 非空），不要催促，等用户回复
-- 如果有新的用户消息，优先处理
-- 所有写作决策必须可追溯到文学方法论
-- 如果你的判断偏离方法论，用 notify 技能告知用户
-- priority: 0=普通, 1=高（用户主动发消息）, 2=紧急
-"""
+        return "\n\n".join(sections)
 
 
 class EditorAgent:
@@ -195,12 +201,43 @@ class EditorAgent:
         self.skill_limit = self.config.get("budget", {}).get("daily_skill_limit", 8)
         self._last_date = datetime.now().date()
 
+        # Conversation history (recent N turns for context)
+        self._chat_history: deque[dict] = deque(maxlen=20)
+
         # Background tasks
         self.running_tasks: dict[str, RunningTask] = {}
         self._task_counter = 0
+        self._pending_matches: list[dict] = []  # scan_opportunities results
+        self._heartbeat_count = 0
+        self._inbox_check_interval = 15  # check inbox every 15 heartbeats (~30min at 2min interval)
 
         # Register status callback
         self.gateway.status_callback = self._build_status_message
+
+    # ========== Conversation History ==========
+
+    async def _reply(self, chat_id: int, text: str, buttons=None):
+        """Send a reply and record it to conversation history."""
+        self._record_chat("agent", text)
+        await self.gateway.send_message(chat_id, text, buttons)
+
+    def _record_chat(self, role: str, content: str):
+        """Record a message to conversation history."""
+        self._chat_history.append({
+            "role": role,
+            "content": content[:500],  # truncate very long messages
+            "time": datetime.now().strftime("%H:%M"),
+        })
+
+    def _chat_history_text(self) -> str:
+        """Format recent conversation history for Brain/skill context."""
+        if not self._chat_history:
+            return ""
+        lines = []
+        for msg in self._chat_history:
+            prefix = "用户" if msg["role"] == "user" else "Agent"
+            lines.append(f"[{msg['time']}] {prefix}: {msg['content']}")
+        return "\n".join(lines)
 
     # ========== Lifecycle ==========
 
@@ -228,6 +265,16 @@ class EditorAgent:
         await self.gateway.stop()
         logger.info("Editor Agent 已停止")
 
+    async def _restart(self, chat_id: int = None):
+        """Graceful restart: write .restart marker, then exit main loop.
+        run.sh detects the marker and relaunches the process."""
+        if chat_id:
+            await self.gateway.send_message(chat_id, "代码已更新，正在重启...")
+        restart_marker = AGENT_DIR / ".restart"
+        restart_marker.write_text(datetime.now().isoformat())
+        logger.info("Restart marker written, shutting down for restart")
+        self.running = False  # main_loop exits → stop() → run.sh detects .restart
+
     # ========== Main Loop ==========
 
     async def _main_loop(self):
@@ -243,6 +290,10 @@ class EditorAgent:
 
             if signal is None:
                 self._reap_completed_tasks()
+                self._heartbeat_count += 1
+                # Periodic inbox check
+                if self._heartbeat_count % self._inbox_check_interval == 0:
+                    await self._periodic_inbox_check()
                 continue
 
             signals = [signal.to_dict()]
@@ -256,6 +307,23 @@ class EditorAgent:
                 pass
 
             await self._process_signals(signals)
+
+    async def _periodic_inbox_check(self):
+        """Periodically check inbox for venue replies. Notify only if new mail found."""
+        skill = self.skills.get("check_inbox")
+        if not skill:
+            return
+        try:
+            result = await asyncio.wait_for(
+                skill.execute({}, self.config), timeout=30
+            )
+            if result.success and result.data and result.data.get("new_count", 0) > 0:
+                chat_id = self.config["telegram"].get("user_id")
+                if chat_id:
+                    await self._reply(int(chat_id), f"📬 {result.message}")
+                logger.info("Inbox check: %d new emails", result.data["new_count"])
+        except Exception as e:
+            logger.debug("Periodic inbox check error: %s", e)
 
     async def _process_signals(self, signals: list[dict]):
         for s in signals:
@@ -273,11 +341,50 @@ class EditorAgent:
         chat_id = signal["data"].get("chat_id")
         text = signal["content"]
 
+        # Record to conversation history
+        self._record_chat("user", text)
+
         # Quick status check
         if any(kw in text for kw in ["进度", "状态", "怎么样了", "到哪了", "投稿状态"]):
             msg = self._build_status_message()
             if chat_id:
                 await self.gateway.send_message(chat_id, msg)
+            return
+
+        # Check inbox trigger
+        if any(kw in text for kw in ["查邮件", "有回复吗", "邮件", "收件箱",
+                                      "check inbox", "回信"]):
+            action = BrainAction(
+                skill="check_inbox",
+                params={},
+                reason="用户请求检查收件箱",
+                priority=1,
+            )
+            await self._spawn_background_task(action, chat_id)
+            return
+
+        # Scan opportunities trigger
+        if any(kw in text for kw in ["扫描", "有什么可以投", "有什么可以写",
+                                      "下一篇", "找机会", "看看机会", "投什么"]):
+            action = BrainAction(
+                skill="scan_opportunities",
+                params={},
+                reason="用户请求扫描投稿机会",
+                priority=1,
+            )
+            await self._spawn_background_task(action, chat_id)
+            return
+
+        # Refresh opportunities trigger (web search for new opportunities)
+        if any(kw in text for kw in ["更新机会", "刷新", "搜索新机会",
+                                      "找新征文", "搜新的"]):
+            action = BrainAction(
+                skill="refresh_opportunities",
+                params={},
+                reason="用户请求搜索新征文机会",
+                priority=1,
+            )
+            await self._spawn_background_task(action, chat_id)
             return
 
         # Check for correction pattern: "纠正: ..." or "修改: ..."
@@ -290,23 +397,47 @@ class EditorAgent:
             await self._handle_result(text, chat_id)
             return
 
-        # Let Brain decide
+        # Intervene trigger: user wants to modify files
+        intervene_keywords = ["修改", "改一下", "更新下", "加上", "删掉",
+                              "改代码", "改成", "标记为", "设为", "改下"]
+        if any(kw in text for kw in intervene_keywords):
+            # Include recent chat history so sonnet understands context
+            history = self._chat_history_text()
+            instruction = f"{text}\n\n## 最近对话上下文\n{history}" if history else text
+            action = BrainAction(
+                skill="intervene",
+                params={"instruction": instruction},
+                reason=f"用户请求修改: {text[:60]}",
+                priority=1,
+            )
+            await self._spawn_background_task(action, chat_id)
+            return
+
+        # Let Brain decide (with conversation history for context)
         action = self.brain.think(
             state_summary=self.state.status_summary(),
             memory_summary=self.memory.recent_paths_markdown(3),
             signals=[signal],
             skills_desc=self.skills.list_descriptions(),
+            chat_history=self._chat_history_text(),
         )
         logger.info("Brain决策: %s — %s", action.skill, action.reason)
 
         if action.skill == "idle":
             if chat_id:
-                await self.gateway.send_message(chat_id, action.reason)
+                await self._reply(chat_id, action.reason)
         elif action.skill == "notify":
             msg = action.params.get("message", action.reason)
             if chat_id:
-                await self.gateway.send_message(chat_id, msg)
+                await self._reply(chat_id, msg)
         else:
+            # If Brain chose intervene, ensure instruction includes user text + context
+            if action.skill == "intervene":
+                history = self._chat_history_text()
+                instruction = action.params.get("instruction", text)
+                if history and "对话上下文" not in instruction:
+                    instruction = f"{instruction}\n\n## 最近对话上下文\n{history}"
+                action.params["instruction"] = instruction
             await self._spawn_background_task(action, chat_id)
 
     async def _handle_callback_signal(self, signal: dict):
@@ -414,6 +545,19 @@ class EditorAgent:
                         f"请告诉我你的修改意见（直接发文字）:"
                     )
 
+        elif callback == "scan_after_refresh":
+            action = BrainAction(
+                skill="scan_opportunities",
+                params={},
+                reason="刷新后自动扫描匹配",
+                priority=1,
+            )
+            await self._spawn_background_task(action, chat_id)
+
+        elif callback.startswith("pick_opp:"):
+            opp_id = callback.split(":", 1)[1]
+            await self._handle_pick_opportunity(opp_id, chat_id)
+
         elif callback == "hold":
             if chat_id:
                 await self.gateway.send_message(chat_id, "好的，有需要随时告诉我。")
@@ -433,6 +577,87 @@ class EditorAgent:
                 f"收到链接: {url[:60]}...\n"
                 f"已记录为参考素材。需要我用这个素材写什么吗？"
             )
+
+    # ========== Opportunity → Manuscript Creation ==========
+
+    async def _handle_pick_opportunity(self, opp_id: str, chat_id: int = None):
+        """User picked an opportunity from scan results. Create manuscript and start flow."""
+        matches = getattr(self, "_pending_matches", [])
+        match = next((m for m in matches if m.get("id") == opp_id), None)
+
+        if not match:
+            if chat_id:
+                await self.gateway.send_message(chat_id, f"未找到机会: {opp_id}")
+            return
+
+        venue = match.get("venue", "")
+        genre = match.get("genre", "散文")
+        theme = match.get("theme", "")
+        action_type = match.get("action", "new_write")
+        topic = match.get("topic_suggestion", theme)
+        word_count = match.get("word_count", "2500")
+        email = match.get("email", "")
+
+        if action_type == "direct_submit":
+            # Already have a work — find it and go to submission
+            active = self.state.get_active()
+            # Try to find existing work matching this venue
+            if chat_id:
+                await self.gateway.send_message(
+                    chat_id,
+                    f"准备直接投稿到 {venue}\n"
+                    f"主题: {theme}\n\n"
+                    f"我来生成投稿邮件草稿。"
+                )
+            # Find the work — for now use the first existing work
+            lit_root = Path(self.config["paths"]["works_dir"]).expanduser()
+            work_dirs = [d for d in lit_root.iterdir() if d.is_dir() and not d.name.startswith(".")] if lit_root.exists() else []
+            if work_dirs:
+                ms_id = opp_id
+                ms = Manuscript(
+                    id=ms_id, title=work_dirs[0].name, venue=venue,
+                    genre=genre, work_dir=str(work_dirs[0]),
+                    opportunity=theme, word_count=word_count,
+                )
+                self.state.add_manuscript(ms)
+                self.state.update_status(ms_id, ManuscriptStatus.SUBMISSION_READY)
+                self.state.update_field(ms_id, submission_email=email)
+                action = BrainAction(
+                    skill="draft_submission",
+                    params={"work_dir": str(work_dirs[0]), "venues": venue},
+                    reason=f"直接投稿: {work_dirs[0].name} → {venue}",
+                    priority=1,
+                )
+                await self._spawn_background_task(action, chat_id, manuscript_id=ms_id)
+            else:
+                if chat_id:
+                    await self.gateway.send_message(chat_id, "没有找到已完成的作品，需要先写一篇。")
+        else:
+            # New write — create manuscript, start gathering
+            ms_id = opp_id
+            ms = Manuscript(
+                id=ms_id, title=topic or theme, venue=venue,
+                genre=genre, opportunity=theme, word_count=word_count,
+            )
+            self.state.add_manuscript(ms)
+            self.state.update_field(ms_id, submission_email=email)
+            self.state.update_status(ms_id, ManuscriptStatus.TOPIC_PROPOSED)
+
+            if chat_id:
+                await self.gateway.send_message(
+                    chat_id,
+                    f"选题已创建:\n\n"
+                    f"目标: {venue}\n"
+                    f"主题: {theme}\n"
+                    f"体裁: {genre}\n"
+                    f"建议选题: {topic}\n"
+                    f"字数: ~{word_count}字\n\n"
+                    f"确认开始？",
+                    buttons=[[
+                        {"text": "开始采集素材", "callback": f"confirm_topic:{ms_id}"},
+                        {"text": "换一个", "callback": "hold"},
+                    ]],
+                )
 
     # ========== Correction System (造人过程) ==========
 
@@ -640,8 +865,42 @@ class EditorAgent:
             msg = result.message[:3500]
             text = f"完成: {action.skill}\n\n{msg}"
 
+            if action.skill == "intervene":
+                restart_needed = result.data.get("restart_needed", False)
+                await self._reply(chat_id, text)
+                if restart_needed:
+                    await self._restart(chat_id)
+                return
+
             if action.skill == "scan_opportunities":
-                await self.gateway.send_message(chat_id, text)
+                matches = result.data.get("matches", []) if result.data else []
+                if matches:
+                    # Store matches for later pickup
+                    self._pending_matches = matches
+                    # Build buttons for each match
+                    buttons = []
+                    for m in matches[:4]:  # Telegram max 4 buttons per row
+                        action_label = "直接投" if m.get("action") == "direct_submit" else "写"
+                        buttons.append({
+                            "text": f"{action_label}: {m.get('venue', '?')[:12]}",
+                            "callback": f"pick_opp:{m.get('id', 'unknown')}",
+                        })
+                    btn_rows = [[b] for b in buttons]  # One button per row for readability
+                    await self.gateway.send_message(chat_id, text, btn_rows)
+                else:
+                    await self.gateway.send_message(chat_id, text)
+                return
+
+            if action.skill == "refresh_opportunities":
+                new_found = result.data.get("new_found", 0) if result.data else 0
+                updated = result.data.get("updated", 0) if result.data else 0
+                buttons = []
+                if new_found > 0 or updated > 0:
+                    buttons.append([
+                        {"text": "扫描匹配", "callback": "scan_after_refresh"},
+                        {"text": "先看看", "callback": "hold"},
+                    ])
+                await self.gateway.send_message(chat_id, text, buttons if buttons else None)
                 return
 
             if action.skill == "gather_materials" and manuscript_id:
@@ -681,9 +940,7 @@ class EditorAgent:
                 await self.gateway.send_message(chat_id, text)
         else:
             err_msg = result.message[:1000]
-            await self.gateway.send_message(
-                chat_id, f"失败: {action.skill}\n{err_msg}"
-            )
+            await self._reply(chat_id, f"失败: {action.skill}\n{err_msg}")
 
     def _reap_completed_tasks(self):
         done = [tid for tid, rt in self.running_tasks.items() if rt.asyncio_task.done()]
@@ -738,6 +995,26 @@ class EditorAgent:
         if corrections_path.exists():
             count = sum(1 for line in open(corrections_path) if line.strip())
             lines.append(f"累计纠正: {count}条")
+
+        # Last search date
+        search_log = Path(
+            self.config["paths"].get("search_log_file", "")
+        ).expanduser()
+        if search_log.exists():
+            last_line = ""
+            for line in open(search_log):
+                if line.strip():
+                    last_line = line.strip()
+            if last_line:
+                try:
+                    last_search = json.loads(last_line)
+                    ts = last_search.get("timestamp", "")[:10]
+                    days_ago = (datetime.now() - datetime.fromisoformat(
+                        last_search["timestamp"])).days
+                    stale = " ⚠️ 超过7天未搜索" if days_ago > 7 else ""
+                    lines.append(f"上次搜索: {ts} ({days_ago}天前){stale}")
+                except (json.JSONDecodeError, KeyError, ValueError):
+                    pass
 
         return "\n".join(lines)
 

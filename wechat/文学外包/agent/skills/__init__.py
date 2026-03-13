@@ -27,8 +27,11 @@ from wechat.文学外包.agent.skills.draft_submission import DraftSubmissionSki
 from wechat.文学外包.agent.skills.track_submissions import TrackSubmissionsSkill
 from wechat.文学外包.agent.skills.check_methodology import CheckMethodologySkill
 from wechat.文学外包.agent.skills.scan_opportunities import ScanOpportunitiesSkill
+from wechat.文学外包.agent.skills.refresh_opportunities import RefreshOpportunitiesSkill
 from wechat.文学外包.agent.skills.gather_materials import GatherMaterialsSkill
 from wechat.文学外包.agent.skills.analyze_result import AnalyzeResultSkill
+from wechat.文学外包.agent.skills.intervene import InterveneSkill
+from wechat.文学外包.agent.skills.check_inbox import CheckInboxSkill
 
 
 def create_editor_registry() -> SkillRegistry:
@@ -37,6 +40,7 @@ def create_editor_registry() -> SkillRegistry:
     registry.register(NotifySkill())
     registry.register(IdleSkill())
     registry.register(ScanOpportunitiesSkill())
+    registry.register(RefreshOpportunitiesSkill())
     registry.register(GatherMaterialsSkill())
     registry.register(CompressGoldlineSkill())
     registry.register(WriteManuscriptSkill())
@@ -44,4 +48,6 @@ def create_editor_registry() -> SkillRegistry:
     registry.register(TrackSubmissionsSkill())
     registry.register(CheckMethodologySkill())
     registry.register(AnalyzeResultSkill())
+    registry.register(InterveneSkill())
+    registry.register(CheckInboxSkill())
     return registry

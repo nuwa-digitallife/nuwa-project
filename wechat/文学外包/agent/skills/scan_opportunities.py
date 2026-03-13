@@ -47,10 +47,12 @@ class ScanOpportunitiesSkill(Skill):
                     if meta_file.exists():
                         import json
                         meta = json.loads(meta_file.read_text())
+                        allowed = meta.get('allowed_platforms', [])
+                        allowed_str = f", 只投: {'、'.join(allowed)}" if allowed else ""
                         works_list.append(
                             f"{meta.get('title', d.name)} ({meta.get('genre', '?')}, "
                             f"~{meta.get('char_count', '?')}字, "
-                            f"状态: {meta.get('status', '?')})"
+                            f"状态: {meta.get('status', '?')}{allowed_str})"
                         )
                     else:
                         works_list.append(d.name)
@@ -91,25 +93,74 @@ class ScanOpportunitiesSkill(Skill):
 
 ## 要求
 
-输出匹配报告，按优先级排序。每条包含：
-1. 机会名称 + 刊物
-2. 匹配度（高/中/低）+ 理由
-3. 建议行动（直接投现有作品 / 需要新写 / 跳过）
-4. 如果需要新写，建议选题方向
+输出严格 JSON 数组（不要 markdown 代码块），每个元素：
+{{
+  "id": "简短ID如 hongdou、jiaxianghao",
+  "venue": "刊物/大赛名",
+  "theme": "主题方向",
+  "genre": "散文/小说/非虚构",
+  "match": "高/中",
+  "reason": "一句话匹配理由",
+  "action": "direct_submit/new_write/skip",
+  "topic_suggestion": "如需新写，建议选题方向（一句话）",
+  "word_count": "建议字数如 2500",
+  "email": "投稿邮箱"
+}}
 
-只推荐匹配度为"中"或"高"的机会。已投稿的不重复推荐。"""
+只输出匹配度"高"或"中"的。已投稿的不重复推荐。最多5条。
+重要：作品信息中标注了"只投: XX"的，只能推荐给该平台，不得推荐给其他任何平台。"""
 
         try:
             result = subprocess.run(
-                ["claude", "-p", prompt, "--model", "haiku", "--output-format", "text"],
+                ["claude", "-p", prompt, "--model", "sonnet", "--output-format", "text"],
                 capture_output=True, text=True, timeout=120, env=_clean_env(),
             )
-            if result.returncode == 0:
-                report = result.stdout.strip()
-                return SkillResult(True, f"机会扫描完成\n\n{report}",
-                                   {"report": report})
-            else:
+            if result.returncode != 0:
                 return SkillResult(False, f"扫描失败: {result.stderr[:300]}")
+
+            raw = result.stdout.strip()
+            # Parse JSON array from LLM output
+            import json
+            text = raw
+            if text.startswith("```"):
+                lines = text.split("\n")
+                text = "\n".join(lines[1:-1]) if len(lines) > 2 else text
+            text = text.strip()
+
+            try:
+                matches = json.loads(text)
+            except json.JSONDecodeError:
+                # Try extracting JSON array from LLM output
+                start = text.find("[")
+                end = text.rfind("]") + 1
+                if start >= 0 and end > start:
+                    try:
+                        matches = json.loads(text[start:end])
+                    except json.JSONDecodeError:
+                        # Fallback: return raw text
+                        return SkillResult(True, f"机会扫描完成（非结构化）\n\n{raw}",
+                                           {"report": raw, "matches": []})
+                else:
+                    # Fallback: return raw text
+                    return SkillResult(True, f"机会扫描完成（非结构化）\n\n{raw}",
+                                       {"report": raw, "matches": []})
+
+            # Build human-readable summary
+            lines = ["机会扫描完成，推荐如下：\n"]
+            for i, m in enumerate(matches, 1):
+                action_label = {"direct_submit": "直接投", "new_write": "需新写", "skip": "跳过"}.get(m.get("action", ""), "?")
+                lines.append(
+                    f"{i}. [{m.get('match','?')}] {m.get('venue','?')}\n"
+                    f"   主题: {m.get('theme','?')} | {m.get('genre','?')} | {action_label}\n"
+                    f"   {m.get('reason','')}"
+                )
+                if m.get("topic_suggestion"):
+                    lines.append(f"   建议选题: {m['topic_suggestion']}")
+                lines.append("")
+
+            summary = "\n".join(lines)
+            return SkillResult(True, summary, {"matches": matches, "report": summary})
+
         except subprocess.TimeoutExpired:
             return SkillResult(False, "机会扫描超时（>2min）")
         except Exception as e:

@@ -7,6 +7,7 @@
   "core_insight": "消失的和留下的，从来不是你以为的那些",
   "material_domain": "城市文化-南宁",
   "status": "终稿",
+  "allowed_platforms": ["红豆"],
   "created": "2026-03-11",
   "source_docx": "邕城朝暮.docx",
   "source_md": "邕城朝暮.md"

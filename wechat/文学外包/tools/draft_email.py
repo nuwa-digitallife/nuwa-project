@@ -90,7 +90,7 @@ VENUES = {
         "aigc_policy": "normal",
     },
     "家乡好": {
-        "full_name": ""谁不说俺家乡好"征文",
+        "full_name": "\u201c谁不说俺家乡好\u201d征文",
         "email": "wdwxtg@qq.com",
         "subject_format": "谁不说俺家乡好+{title}+{pen_name}",
         "level": "国家级协会",
@@ -230,9 +230,9 @@ def send_smtp(smtp_cfg: dict, msg: email.mime.multipart.MIMEMultipart) -> bool:
 
 # IMAP 服务器映射（草稿功能用）
 IMAP_SERVERS = {
-    "outlook.com": "outlook.office365.com",
-    "hotmail.com": "outlook.office365.com",
-    "live.com":    "outlook.office365.com",
+    "outlook.com": "imap-mail.outlook.com",
+    "hotmail.com": "imap-mail.outlook.com",
+    "live.com":    "imap-mail.outlook.com",
     "gmail.com":   "imap.gmail.com",
 }
 IMAP_DRAFTS_FOLDER = {

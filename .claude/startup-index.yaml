@@ -60,6 +60,11 @@ wechat:
     desc: "扫描当前投稿机会"
     opts: "ls"
 
+# ─── 第三层：GitHub 开源（子项目，继承 shared + nuwa） ───
+github:
+  - path: "wechat/githubePlay/README.md"
+    desc: "GitHub 开源项目方向（种子阶段）"
+
 # ─── 未来子项目示例 ───
 # upwork:
 #   - path: "upwork/config.yaml"
