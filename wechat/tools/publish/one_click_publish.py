@@ -22,8 +22,10 @@
 
 import argparse
 import asyncio
+import json
 import os
 import re
+import signal
 import subprocess
 import sys
 import time
@@ -39,6 +41,95 @@ PROJECT_ROOT = SCRIPT_DIR.parent.parent.parent  # nuwa-project/
 # mdnice
 MDNICE_URL = "https://editor.mdnice.com/"
 MDNICE_THEME = "橙心"
+
+
+def verify_with_claude(screenshot_paths: list[str], article_text: str,
+                       expected_images: int, title: str,
+                       timeout: int = 120) -> dict:
+    """调用 claude -p 验证编辑器截图中的正文和配图。
+
+    与 engine.py 的 run_claude 同一模式：claude -p + Read 工具看截图。
+    返回 {"pass": bool, "issues": [...], "summary": str}
+    """
+    # 构建 prompt：让 claude 读截图并验证
+    screenshot_section = "\n".join(f"- {p}" for p in screenshot_paths)
+
+    # 从文章抽关键句作为验证锚点
+    lines = [l.strip() for l in article_text.split("\n")
+             if l.strip() and not l.strip().startswith("!")]
+    probes = []
+    for idx in [1, len(lines) // 4, len(lines) // 2, -3]:
+        if abs(idx) < len(lines):
+            p = lines[idx].strip("*#>- ").replace("**", "")[:60]
+            if len(p) > 10:
+                probes.append(p)
+    probes_section = "\n".join(f"- \"{p}\"" for p in probes)
+
+    prompt = f"""你是发布验证 Agent。请用 Read 工具逐一打开以下编辑器截图，验证微信文章草稿的完整性。
+
+## 截图文件（按页面顺序）
+{screenshot_section}
+
+## 验证项
+
+1. **正文完整性**：以下关键句是否都能在截图中找到对应文字？
+{probes_section}
+
+2. **配图**：文章中应有 {expected_images} 张正文配图（不含封面）。请数截图中实际可见的图片数量。图片是否正常渲染（不是破图/空白框）？
+
+3. **标题**：编辑器标题是否为「{title}」？
+
+4. **排版**：是否有明显的排版问题（文字截断、乱码、空白段落过多）？
+
+## 输出格式
+
+只输出 JSON，不要其他文字：
+```json
+{{"pass": true/false, "text_found": 4, "text_total": 4, "images_found": 5, "images_expected": {expected_images}, "title_ok": true/false, "issues": ["issue1", "issue2"]}}
+```
+
+如果所有验证项通过，"pass" 为 true，"issues" 为空数组。
+"""
+
+    cmd = [
+        "claude", "-p",
+        "--model", "haiku",
+        "--allowedTools", "Read",
+        "--effort", "low",
+        "--no-session-persistence",
+    ]
+
+    env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
+
+    try:
+        proc = subprocess.Popen(
+            cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, text=True, encoding="utf-8",
+            env=env, start_new_session=True,
+        )
+        stdout, stderr = proc.communicate(input=prompt, timeout=timeout)
+
+        if proc.returncode != 0:
+            print(f"  verify_with_claude failed (exit={proc.returncode}): {stderr[:200]}", file=sys.stderr)
+            return {"pass": False, "issues": [f"claude verification failed: exit {proc.returncode}"]}
+
+        # 提取 JSON
+        text = stdout.strip()
+        json_match = re.search(r'\{[^{}]*"pass"[^{}]*\}', text, re.DOTALL)
+        if json_match:
+            return json.loads(json_match.group())
+        else:
+            print(f"  verify_with_claude: no JSON in output: {text[:300]}", file=sys.stderr)
+            return {"pass": False, "issues": ["could not parse verification output"]}
+
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        except Exception:
+            pass
+        return {"pass": False, "issues": ["verification timed out"]}
+    except Exception as e:
+        return {"pass": False, "issues": [str(e)]}
 
 
 def parse_publish_guide(guide_path: Path) -> dict:
@@ -724,11 +815,31 @@ async def publish(topic_dir: Path, dry_run: bool = False,
         print(f"  内容验证异常: {e}", file=sys.stderr)
         verify_ok = False
 
-    # 打开验证截图给用户看
-    if os.path.exists(draft_screenshot):
-        subprocess.run(["open", draft_screenshot], timeout=5)
-
     await auto.close()
+
+    # ── Step 9: Claude 视觉验证（最后一道关） ──
+    print(f"\n--- Claude 视觉验证 ---")
+    verify_screenshots = sorted(str(p) for p in topic_dir.glob("_verify_*.png"))
+    if verify_screenshots:
+        expected_img_count = len([f for f in (info.get("images") or []) if not f.endswith("cover.png")])
+        claude_result = verify_with_claude(
+            screenshot_paths=verify_screenshots,
+            article_text=md_text,
+            expected_images=expected_img_count,
+            title=info["title"],
+        )
+        if claude_result.get("pass"):
+            print(f"  ✅ Claude 验证通过: "
+                  f"文字 {claude_result.get('text_found', '?')}/{claude_result.get('text_total', '?')}, "
+                  f"配图 {claude_result.get('images_found', '?')}/{claude_result.get('images_expected', '?')}")
+        else:
+            issues = claude_result.get("issues", [])
+            print(f"  ❌ Claude 验证未通过:", file=sys.stderr)
+            for issue in issues:
+                print(f"     - {issue}", file=sys.stderr)
+            verify_ok = False
+    else:
+        print(f"  ⚠️ 无逐屏截图，跳过 Claude 验证")
 
     # ── Step 10: 通知 ──
     status = "VERIFIED" if found else "UNVERIFIED"
