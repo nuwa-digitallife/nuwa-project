@@ -423,7 +423,7 @@ async def publish(topic_dir: Path, dry_run: bool = False,
     # ── Dry run: 只走 mdnice，不操作微信 ──
     if dry_run:
         ok = await mdnice_render(md_text, screenshot_dir=topic_dir,
-                                 keep_browser=True)
+                                 keep_browser=False)
         if not ok:
             print("ERROR: mdnice 排版失败", file=sys.stderr)
             return 1

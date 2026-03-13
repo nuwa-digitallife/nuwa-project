@@ -89,6 +89,29 @@ class WeChatAutomator:
         print("WARNING: 未找到微信公众号页面", file=sys.stderr)
         return False
 
+    async def _verify_token(self, page) -> bool:
+        """验证 token 是否仍然有效（未过期）。
+
+        通过轻量 API 调用检测，如果返回登录超时则 token 无效。
+        """
+        try:
+            token = re.search(r"token=(\d+)", page.url)
+            if not token:
+                return False
+            token = token.group(1)
+            result = await page.evaluate("""(token) => {
+                try {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', '/cgi-bin/home?action=get_home_info&token=' + token + '&lang=zh_CN&f=json', false);
+                    xhr.send();
+                    var d = JSON.parse(xhr.responseText);
+                    return d.base_resp && d.base_resp.ret == 0 ? 'valid' : 'expired';
+                } catch(e) { return 'error'; }
+            }""", token)
+            return result == 'valid'
+        except Exception:
+            return False
+
     async def find_or_create_mp_page(self):
         """确保有一个 MP 页面可用（用于 API 调用如图片上传）。
 
@@ -99,9 +122,13 @@ class WeChatAutomator:
         # 先试已有页面
         for page in self.context.pages:
             if EDITOR_URL_PATTERN in page.url and "token=" in page.url:
-                self.page = page
-                print(f"Using MP page: {page.url[:80]}")
-                return True
+                # 验证 token 是否仍然有效
+                if await self._verify_token(page):
+                    self.page = page
+                    print(f"Using MP page: {page.url[:80]}")
+                    return True
+                else:
+                    print("WARNING: MP 页面 token 已过期，重新登录...")
 
         # 没有带 token 的 MP 页面，尝试导航
         if self.context.pages:
@@ -113,8 +140,8 @@ class WeChatAutomator:
         await page.goto("https://mp.weixin.qq.com/", wait_until="domcontentloaded", timeout=30000)
         await asyncio.sleep(3)
 
-        # 检查是否登录（URL 应包含 token）
-        if "token=" in page.url:
+        # 检查是否登录（URL 应包含 token 且 token 有效）
+        if "token=" in page.url and await self._verify_token(page):
             self.page = page
             print(f"MP page ready: {page.url[:80]}")
             return True
