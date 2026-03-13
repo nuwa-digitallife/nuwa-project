@@ -1,0 +1,94 @@
+Anthropic
+Artificial Analysis Intelligence Index
+Atlas 950超节点
+BitNet 1.58b
+Chris Clark
+Claude 4 Sonnet
+Claude Code
+Claude Haiku
+Claude Opus
+Claude Opus 4.6
+Claude Sonnet
+Cline
+Cursor
+DARE计划
+DeepSeek
+DeepSeek V3.2
+DeepSeek V4
+EuroHPC
+Fact Agent
+Fireworks AI
+GLM-5
+GPT-4o
+GPT-5.4
+GitHub
+GitHub Copilot
+Google
+Google TPU
+H20
+HBM
+Humanloop
+IDG
+Karpenter
+Kilo Code
+Kimi K2.5
+Lightning
+M2.5
+MiniMax
+MiniMax M2.5
+ModelScope
+Multi-SWE-Bench
+Nova DasSarma
+OpenAI
+OpenClaw
+OpenRouter
+Portkey
+Qwen3.5
+RISC-V
+RTX 4090
+RTX 5090
+Replit
+SWE-Bench Verified
+Silicon Box
+Stack Overflow
+Standard
+Tabnine
+Terminal-Bench
+Trae
+Vbot
+Vercel
+Vertex AI
+华为
+华为昇腾
+华为昇腾910B
+华为昇腾910C
+华为昇腾950
+华为昇腾Atlas 800 A2
+华为昇腾Atlas 800 A3
+壁仞科技
+天数智芯
+字节跳动
+寒武纪
+寒武纪590
+寒武纪690
+意大利
+摩尔线程
+新加坡
+日本
+昇腾950DT
+昇腾950PR
+欧盟
+沐曦
+海光信息
+百度
+科大讯飞
+米哈游
+红杉
+维他动力
+腾讯
+英伟达
+长江存储
+阿里
+阿里云
+阿里云百炼
+高瓴

@@ -1289,6 +1289,133 @@ def generate_cover_image(article_text: str, topic_dir: Path):
         log.warning(f"封面图生成异常: {e}")
 
 
+# ── 后处理：Word 文档生成 ──────────────────────────────
+
+def generate_word_doc(article_text: str, topic_dir: Path):
+    """将 article.md + 配图合并为 Word 文档，供用户审阅。"""
+    try:
+        from docx import Document
+        from docx.shared import Inches, Pt, RGBColor
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+    except ImportError:
+        log.warning("python-docx 未安装，跳过 Word 生成 (pip install python-docx)")
+        return
+
+    doc = Document()
+
+    # 基础样式
+    style = doc.styles["Normal"]
+    font = style.font
+    font.name = "PingFang SC"
+    font.size = Pt(11)
+    font.color.rgb = RGBColor(0x33, 0x33, 0x33)
+    style.paragraph_format.space_after = Pt(6)
+    style.paragraph_format.line_spacing = 1.5
+
+    images_dir = topic_dir / "images"
+
+    # 封面图
+    cover_path = images_dir / "cover.png"
+    if cover_path.exists():
+        try:
+            doc.add_picture(str(cover_path), width=Inches(6))
+            doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
+        except Exception:
+            log.warning("  封面图格式不支持，跳过嵌入")
+
+    # 逐行解析 Markdown → Word
+    lines = article_text.split("\n")
+    i = 0
+    while i < len(lines):
+        line = lines[i].rstrip()
+
+        # 标题
+        if line.startswith("# ") and not line.startswith("## "):
+            p = doc.add_heading(line[2:].strip(), level=1)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        elif line.startswith("## "):
+            doc.add_heading(line[3:].strip(), level=2)
+        elif line.startswith("### "):
+            doc.add_heading(line[4:].strip(), level=3)
+
+        # 图片标记 ![xxx](path)
+        elif line.strip().startswith("!["):
+            import re as _re
+            m = _re.match(r'!\[([^\]]*)\]\(([^)]+)\)', line.strip())
+            if m:
+                alt, img_path = m.group(1), m.group(2)
+                # 尝试找本地图片
+                full_path = None
+                if (topic_dir / img_path).exists():
+                    full_path = topic_dir / img_path
+                elif (images_dir / Path(img_path).name).exists():
+                    full_path = images_dir / Path(img_path).name
+                # 按文件名模糊匹配
+                if not full_path and images_dir.exists():
+                    for f in images_dir.iterdir():
+                        if f.suffix in (".png", ".jpg", ".jpeg") and f.name != "cover.png":
+                            if alt and alt.lower() in f.name.lower():
+                                full_path = f
+                                break
+
+                if full_path and full_path.exists():
+                    try:
+                        doc.add_picture(str(full_path), width=Inches(5.5))
+                        doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
+                        if alt:
+                            cap = doc.add_paragraph(alt)
+                            cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                            cap.runs[0].font.size = Pt(9)
+                            cap.runs[0].font.color.rgb = RGBColor(0x99, 0x99, 0x99)
+                    except Exception:
+                        p = doc.add_paragraph(f"[配图: {alt or img_path} (格式不支持)]")
+                        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                elif not full_path:
+                    # 图片不存在，写占位文字
+                    p = doc.add_paragraph(f"[配图: {alt or img_path}]")
+                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    p.runs[0].font.color.rgb = RGBColor(0xCC, 0x00, 0x00)
+
+        # blockquote
+        elif line.strip().startswith("> "):
+            text = line.strip()[2:]
+            p = doc.add_paragraph(text)
+            p.paragraph_format.left_indent = Inches(0.5)
+            p.runs[0].font.italic = True
+            p.runs[0].font.color.rgb = RGBColor(0x66, 0x66, 0x66)
+
+        # 空行
+        elif not line.strip():
+            pass  # skip blank lines
+
+        # 普通段落
+        else:
+            # 处理加粗和行内格式
+            import re as _re
+            clean = line.strip()
+            if clean.startswith("- ") or clean.startswith("* "):
+                clean = clean[2:]
+                p = doc.add_paragraph(style="List Bullet")
+            else:
+                p = doc.add_paragraph()
+
+            # 简单加粗解析
+            parts = _re.split(r'(\*\*[^*]+\*\*)', clean)
+            for part in parts:
+                if part.startswith("**") and part.endswith("**"):
+                    run = p.add_run(part[2:-2])
+                    run.bold = True
+                else:
+                    p.add_run(part)
+
+        i += 1
+
+    # 保存
+    output_path = topic_dir / "article_review.docx"
+    doc.save(str(output_path))
+    log.info(f"  Word 审阅文档: {output_path} ({output_path.stat().st_size // 1024}KB)")
+
+
 # ── 主流程 ───────────────────────────────────────────
 
 def run_engine(topic_dir: Path, persona: str, series: str = None,
@@ -1418,27 +1545,55 @@ def run_engine(topic_dir: Path, persona: str, series: str = None,
 
     # ── Pass 4.5: 标题与元数据优化 ──
     if success and not skip_title:
-        run_pass4b(topic_dir, force_title=force_title)
+        try:
+            run_pass4b(topic_dir, force_title=force_title)
+        except Exception as e:
+            log.warning(f"Pass 4.5 标题优化异常（不影响主流程）: {e}")
 
-    # ── 后处理 ──
+    # ── 后处理（全部 try-except 包裹，不影响主流程成功状态）──
     if success:
-        extract_lessons_from_review(review_report, series, topic_dir)
+        try:
+            extract_lessons_from_review(review_report, series, topic_dir)
+        except Exception as e:
+            log.warning(f"经验提取异常: {e}")
 
         final_article = ""
-        if (topic_dir / "article.md").exists():
-            final_article = (topic_dir / "article.md").read_text(encoding="utf-8")
-        elif article_reviewed:
-            final_article = article_reviewed
+        try:
+            if (topic_dir / "article.md").exists():
+                final_article = (topic_dir / "article.md").read_text(encoding="utf-8")
+            elif article_reviewed:
+                final_article = article_reviewed
+        except Exception as e:
+            log.warning(f"读取终稿异常: {e}")
 
         if final_article:
-            generate_cover_image(final_article, topic_dir)
-            collect_images(final_article, topic_dir, model=model, effort="high")
+            # 封面图（重试1次）
+            for attempt in range(2):
+                try:
+                    generate_cover_image(final_article, topic_dir)
+                    break
+                except Exception as e:
+                    log.warning(f"封面图生成异常 (attempt {attempt+1}): {e}")
+
+            # 配图采集（重试1次）
+            for attempt in range(2):
+                try:
+                    collect_images(final_article, topic_dir, model=model, effort="high")
+                    break
+                except Exception as e:
+                    log.warning(f"配图采集异常 (attempt {attempt+1}): {e}")
+
+            # Word 文档生成
+            try:
+                generate_word_doc(final_article, topic_dir)
+            except Exception as e:
+                log.warning(f"Word 文档生成异常: {e}")
 
         log.info("=" * 50)
         log.info("写作引擎完成")
         log.info("=" * 50)
         for f in sorted(topic_dir.iterdir()):
-            if f.is_file() and f.suffix == ".md":
+            if f.is_file() and f.suffix in (".md", ".docx"):
                 log.info(f"  {f.name} ({f.stat().st_size} bytes)")
         images_dir = topic_dir / "images"
         if images_dir.exists():
