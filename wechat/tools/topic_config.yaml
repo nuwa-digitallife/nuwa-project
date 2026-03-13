@@ -91,10 +91,14 @@ persona_matching:
 models:
   # Phase 1.5: 深度素材采集
   deep_research:
-    model: opus
-    effort: high
+    model: opus            # 审计+合并用 opus
+    search_model: haiku    # 搜索轮次用 haiku（量大，重搜索不重推理）
+    effort: high           # 审计 effort
+    search_effort: medium  # 搜索轮次 effort
     tools: "WebSearch,WebFetch,Read"
-    timeout: 900       # 秒
+    timeout: 600           # 每轮 timeout（haiku 更快）
+    max_rounds: 5          # 最大迭代轮数
+    min_new_entities: 2    # 收敛阈值：新增实体数 < 此值则退出
 
   # Phase 2: 写作引擎（Pass 1→2→3→3.5→4）
   write_engine:

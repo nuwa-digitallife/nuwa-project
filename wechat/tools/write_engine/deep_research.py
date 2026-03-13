@@ -16,6 +16,7 @@
   python deep_research.py --topic-dir ... --topic "Anthropic蒸馏门调查"
   python deep_research.py --topic-dir ... --effort medium --model sonnet
 """
+from __future__ import annotations
 
 import argparse
 import logging
@@ -29,13 +30,18 @@ CONFIG_FILE = Path(__file__).resolve().parent.parent / "topic_config.yaml"
 
 # 默认值（被 topic_config.yaml models.deep_research 覆盖）
 DEFAULT_MODEL = "opus"
+DEFAULT_SEARCH_MODEL = "haiku"
 DEFAULT_EFFORT = "high"
+DEFAULT_SEARCH_EFFORT = "medium"
 DEFAULT_TOOLS = "WebSearch,WebFetch,Read"
-DEFAULT_TIMEOUT = 900
+DEFAULT_TIMEOUT = 600
+DEFAULT_MAX_ROUNDS = 5
+DEFAULT_MIN_NEW_ENTITIES = 2
 
 
 def _load_model_config():
-    global DEFAULT_MODEL, DEFAULT_EFFORT, DEFAULT_TOOLS, DEFAULT_TIMEOUT
+    global DEFAULT_MODEL, DEFAULT_SEARCH_MODEL, DEFAULT_EFFORT, DEFAULT_SEARCH_EFFORT
+    global DEFAULT_TOOLS, DEFAULT_TIMEOUT, DEFAULT_MAX_ROUNDS, DEFAULT_MIN_NEW_ENTITIES
     try:
         import yaml
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
@@ -43,12 +49,20 @@ def _load_model_config():
         dr = config.get("models", {}).get("deep_research", {})
         if dr.get("model"):
             DEFAULT_MODEL = dr["model"]
+        if dr.get("search_model"):
+            DEFAULT_SEARCH_MODEL = dr["search_model"]
         if dr.get("effort"):
             DEFAULT_EFFORT = dr["effort"]
+        if dr.get("search_effort"):
+            DEFAULT_SEARCH_EFFORT = dr["search_effort"]
         if dr.get("tools"):
             DEFAULT_TOOLS = dr["tools"]
         if dr.get("timeout"):
             DEFAULT_TIMEOUT = dr["timeout"]
+        if dr.get("max_rounds"):
+            DEFAULT_MAX_ROUNDS = dr["max_rounds"]
+        if dr.get("min_new_entities"):
+            DEFAULT_MIN_NEW_ENTITIES = dr["min_new_entities"]
     except Exception:
         pass
 
@@ -179,6 +193,123 @@ def build_research_prompt(topic: str, existing_materials: str) -> str:
 """
 
 
+def build_followup_prompt(topic: str, accumulated_summary: str,
+                          entity_list: set, round_num: int) -> str:
+    """构造后续轮次的检索 prompt——基于已有实体发现新线索。"""
+    entities_str = "、".join(sorted(entity_list))
+    return f"""你是降临派手记的素材采集系统，正在执行第 {round_num} 轮迭代检索。
+
+## 选题
+{topic}
+
+## 已有素材摘要（前几轮已采集）
+{accumulated_summary[:10000]}
+
+## 已发现的实体清单
+{entities_str}
+
+## 本轮任务
+
+**不要重复搜索已有内容。** 你的任务是发现上面素材中 **提到但未深入** 的线索：
+
+1. **关联实体挖掘**：已有实体提到的合作方、竞争对手、上下游公司/技术，逐一搜索
+2. **相邻领域扩展**：与选题直接相关但尚未覆盖的技术方向、政策动态、市场数据
+3. **反方观点**：搜索对已有观点的反驳、质疑、替代解释
+4. **一手源追溯**：已有素材中引用的但未直接访问的论文/官方博客/GitHub
+5. **最新动态**：对已有实体搜索 "latest 2026" / "最新进展"
+
+### 搜索策略
+- 中英文各 2-3 轮搜索，使用上面实体清单派生的关键词
+- 找到新信息后追溯一手源
+- 关键数字交叉验证
+
+## 输出格式
+
+### 新发现素材
+（只输出本轮新发现的内容，不重复已有素材）
+
+每条素材标注信源 URL。
+
+### 新发现实体
+（列出本轮新发现的公司/人物/产品/技术名称，每行一个，格式：`- 实体名`）
+"""
+
+
+def extract_entities(text: str) -> set:
+    """调用 haiku 从素材文本中提取实体名（公司/人物/产品/技术）。"""
+    from engine import run_claude_with_retry
+
+    prompt = f"""从以下文本中提取所有关键实体（公司名、人物名、产品名、技术名、模型名）。
+
+要求：
+- 每行一个实体，格式：`- 实体名`
+- 只输出实体列表，不要其他内容
+- 合并重复（如 "OpenAI" 和 "Open AI" 只保留 "OpenAI"）
+- 忽略过于泛化的词（如 "AI"、"机器学习"）
+
+文本：
+{text[:12000]}"""
+
+    cmd = [
+        "claude", "-p",
+        "--model", DEFAULT_SEARCH_MODEL,
+        "--effort", "low",
+        "--no-session-persistence",
+    ]
+    result = run_claude_with_retry(cmd, prompt, timeout=120, max_retries=2, logger=log)
+    if result is None or result.returncode != 0 or not result.stdout.strip():
+        # fallback: 简单正则提取（不依赖 LLM）
+        log.warning("  实体提取 LLM 失败，使用 fallback")
+        return set()
+
+    entities = set()
+    for line in result.stdout.strip().split("\n"):
+        line = line.strip()
+        if line.startswith("- "):
+            entity = line[2:].strip().strip("`").strip("*")
+            if entity and len(entity) > 1:
+                entities.add(entity)
+    log.info(f"  提取到 {len(entities)} 个实体")
+    return entities
+
+
+def merge_materials(rounds: list, topic: str) -> str:
+    """调用 haiku 将多轮素材合并去重，输出统一格式的素材报告。"""
+    from engine import run_claude_with_retry
+
+    combined = "\n\n---\n\n".join(
+        f"## 第 {i+1} 轮素材\n{text}" for i, text in enumerate(rounds)
+    )
+    # 如果总量不大，直接拼接即可，不需要 LLM 去重
+    if len(combined) < 20000:
+        return combined
+
+    prompt = f"""将以下多轮采集的素材合并为一份统一的素材报告。
+
+要求：
+1. 去除重复内容（同一事实只保留信源最权威的版本）
+2. 保留所有 URL 信源
+3. 按以下结构组织：核心事实、关键人物/公司、时间线、多方观点、数据表、争议点、一手源清单、潜在配图素材
+4. 标注哪些内容是后续轮次补充发现的（用 [Round N 补充] 标记）
+
+## 选题：{topic}
+
+{combined[:30000]}"""
+
+    cmd = [
+        "claude", "-p",
+        "--model", DEFAULT_SEARCH_MODEL,
+        "--effort", "medium",
+        "--no-session-persistence",
+    ]
+    result = run_claude_with_retry(cmd, prompt, timeout=300, max_retries=2, logger=log)
+    if result is None or result.returncode != 0 or not result.stdout.strip():
+        log.warning("  素材合并 LLM 失败，使用简单拼接")
+        return combined
+    log.info(f"  素材合并完成 ({len(result.stdout.strip())} chars)")
+    return result.stdout.strip()
+
+
 def build_audit_prompt(topic: str, materials: str) -> str:
     """构造独立审计 prompt——代码强制的第二步验证。"""
     return f"""你是一个素材审计员。你的唯一任务是核查以下素材报告的**覆盖完整性**和**时效性**。
@@ -304,9 +435,38 @@ def run_patch(topic: str, materials: str, audit: str,
     return output
 
 
+def _run_search_round(topic: str, prompt: str, round_num: int,
+                      model: str = DEFAULT_SEARCH_MODEL,
+                      effort: str = DEFAULT_SEARCH_EFFORT) -> str | None:
+    """执行单轮搜索，返回素材文本。"""
+    from engine import run_claude_with_retry
+
+    cmd = [
+        "claude", "-p",
+        "--model", model,
+        "--allowedTools", DEFAULT_TOOLS,
+        "--effort", effort,
+        "--no-session-persistence",
+    ]
+    log.info(f"  [Round {round_num}] 调用 {model} 搜索...")
+    result = run_claude_with_retry(cmd, prompt, DEFAULT_TIMEOUT, logger=log)
+    if result is None or result.returncode != 0:
+        log.error(f"  [Round {round_num}] 搜索失败")
+        if result and result.stderr:
+            log.error(f"  stderr: {result.stderr[:300]}")
+        return None
+    output = result.stdout.strip()
+    if not output:
+        log.error(f"  [Round {round_num}] 无输出")
+        return None
+    log.info(f"  [Round {round_num}] 完成 ({len(output)} chars)")
+    return output
+
+
 def run_research(topic_dir: Path, topic: str = None, model: str = DEFAULT_MODEL,
-                 effort: str = DEFAULT_EFFORT) -> bool:
-    """执行深度素材采集。"""
+                 effort: str = DEFAULT_EFFORT, max_rounds: int = DEFAULT_MAX_ROUNDS,
+                 min_new_entities: int = DEFAULT_MIN_NEW_ENTITIES) -> bool:
+    """执行深度素材采集（迭代收敛搜索）。"""
     topic_dir = Path(topic_dir).resolve()
     if not topic_dir.exists():
         log.error(f"选题目录不存在: {topic_dir}")
@@ -317,7 +477,8 @@ def run_research(topic_dir: Path, topic: str = None, model: str = DEFAULT_MODEL,
         topic = infer_topic_from_dir(topic_dir)
     log.info(f"深度采集启动: {topic}")
     log.info(f"  目录: {topic_dir}")
-    log.info(f"  模型: {model}, effort: {effort}")
+    log.info(f"  搜索模型: {DEFAULT_SEARCH_MODEL}, 审计模型: {model}")
+    log.info(f"  最大轮数: {max_rounds}, 收敛阈值: {min_new_entities} 新实体")
 
     # 读取已有素材
     existing = load_existing_materials(topic_dir)
@@ -326,39 +487,63 @@ def run_research(topic_dir: Path, topic: str = None, model: str = DEFAULT_MODEL,
     else:
         log.info("  无已有素材，从零搜索")
 
-    # 构造 prompt
+    # ── Round 1: 初始广搜 ──
     prompt = build_research_prompt(topic, existing)
-    log.info(f"  Prompt 长度: {len(prompt)} chars")
+    log.info(f"  Round 1 prompt: {len(prompt)} chars")
 
-    # 调用 claude -p（带限流重试）
-    from engine import run_claude_with_retry
-
-    cmd = [
-        "claude", "-p",
-        "--model", model,
-        "--allowedTools", DEFAULT_TOOLS,
-        "--effort", effort,
-        "--no-session-persistence",
-    ]
-
-    log.info("  调用 claude -p 开始深度搜索...")
-    result = run_claude_with_retry(cmd, prompt, DEFAULT_TIMEOUT, logger=log)
-
-    if result is None:
+    materials = _run_search_round(topic, prompt, round_num=1,
+                                  model=DEFAULT_SEARCH_MODEL,
+                                  effort=DEFAULT_SEARCH_EFFORT)
+    if not materials:
         return False
 
-    if result.returncode != 0:
-        log.error(f"  失败 (exit={result.returncode})")
-        log.error(f"  stderr: {result.stderr[:500]}")
-        return False
+    all_rounds = [materials]
+    entities = extract_entities(materials)
+    log.info(f"  [Round 1] 实体: {len(entities)} 个")
 
-    output = result.stdout.strip()
-    if not output:
-        log.error("  无输出")
-        return False
+    # ── Iterative rounds: 基于实体清单继续深挖 ──
+    for round_num in range(2, max_rounds + 1):
+        followup_prompt = build_followup_prompt(
+            topic, materials, entities, round_num
+        )
+        new_materials = _run_search_round(
+            topic, followup_prompt, round_num=round_num,
+            model=DEFAULT_SEARCH_MODEL, effort=DEFAULT_SEARCH_EFFORT
+        )
+        if not new_materials:
+            log.info(f"  [Round {round_num}] 搜索失败，停止迭代")
+            break
 
-    # ── 独立验证步骤：覆盖+时效性核查 ──
-    # 不依赖主 agent 的自查（prompt 是软约束），用代码强制跑第二个 agent
+        new_entities = extract_entities(new_materials)
+        added = new_entities - entities
+
+        # 备用判断：新增材料长度 < 上一轮的 10%
+        length_ratio = len(new_materials) / max(len(all_rounds[-1]), 1)
+        log.info(f"  [Round {round_num}] 新增 {len(added)} 个实体, "
+                 f"内容比例 {length_ratio:.1%}")
+
+        if len(added) < min_new_entities:
+            log.info(f"  [Round {round_num}] 新增实体不足 {min_new_entities}，收敛退出")
+            # 仍然保留本轮内容（可能有价值的补充）
+            if new_materials.strip():
+                all_rounds.append(new_materials)
+            break
+
+        log.info(f"  [Round {round_num}] 新实体: {sorted(added)}")
+        entities |= new_entities
+        all_rounds.append(new_materials)
+        # 更新累积素材供下一轮使用
+        materials = merge_materials(all_rounds, topic)
+
+    log.info(f"  迭代搜索完成: {len(all_rounds)} 轮, {len(entities)} 个实体")
+
+    # ── 合并所有轮次素材 ──
+    if len(all_rounds) > 1:
+        output = merge_materials(all_rounds, topic)
+    else:
+        output = all_rounds[0]
+
+    # ── 独立验证步骤：覆盖+时效性核查（用 opus） ──
     log.info("  开始独立验证（覆盖+时效性核查）...")
     audit_result = run_audit(topic, output, model=model)
     if audit_result:
@@ -387,6 +572,11 @@ def run_research(topic_dir: Path, topic: str = None, model: str = DEFAULT_MODEL,
     output_path.write_text(output, encoding="utf-8")
     log.info(f"  ✅ 素材报告已保存: {output_path} ({len(output)} chars)")
 
+    # 保存实体清单（便于调试和复盘）
+    entity_path = materials_dir / "entity_list.txt"
+    entity_path.write_text("\n".join(sorted(entities)), encoding="utf-8")
+    log.info(f"  实体清单已保存: {entity_path} ({len(entities)} 个)")
+
     # 统计素材质量指标
     url_count = output.count("http")
     section_count = output.count("## ")
@@ -409,13 +599,20 @@ def main():
 
   # 快速测试（sonnet + medium effort）
   python deep_research.py --topic-dir ... --model sonnet --effort medium
+
+  # 限制迭代轮数
+  python deep_research.py --topic-dir ... --max-rounds 3
         """,
     )
     parser.add_argument("--topic-dir", required=True, help="选题目录路径")
     parser.add_argument("--topic", default=None, help="选题主题（不指定则从目录名推断）")
-    parser.add_argument("--model", default=DEFAULT_MODEL, help=f"模型 (默认: {DEFAULT_MODEL})")
+    parser.add_argument("--model", default=DEFAULT_MODEL, help=f"审计模型 (默认: {DEFAULT_MODEL})")
     parser.add_argument("--effort", choices=["low", "medium", "high"], default=DEFAULT_EFFORT,
-                        help=f"推理 effort 级别 (默认: {DEFAULT_EFFORT})")
+                        help=f"审计 effort 级别 (默认: {DEFAULT_EFFORT})")
+    parser.add_argument("--max-rounds", type=int, default=DEFAULT_MAX_ROUNDS,
+                        help=f"最大迭代轮数 (默认: {DEFAULT_MAX_ROUNDS})")
+    parser.add_argument("--min-new-entities", type=int, default=DEFAULT_MIN_NEW_ENTITIES,
+                        help=f"收敛阈值 (默认: {DEFAULT_MIN_NEW_ENTITIES})")
 
     args = parser.parse_args()
     success = run_research(
@@ -423,6 +620,8 @@ def main():
         topic=args.topic,
         model=args.model,
         effort=args.effort,
+        max_rounds=args.max_rounds,
+        min_new_entities=args.min_new_entities,
     )
     sys.exit(0 if success else 1)
 
