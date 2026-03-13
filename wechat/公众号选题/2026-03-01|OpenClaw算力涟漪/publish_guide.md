@@ -1,4 +1,7 @@
-# 发布指南：从一次封号，到一座核电站
+# 发布指南：OpenClaw算力涟漪
+
+**标题：** 一个AI订阅烧掉数千美元算力，顺着裂缝看到了七级产业链
+**简介：** Agent把每次调用放大700倍，核电站要十年才能追上。推理优化软件正在两者之间争取时间——它能争取到多少？
 
 ## 文件清单
 - [x] article.md — 终稿
@@ -6,7 +9,7 @@
 - [x] review_report.md — 三层恰Review
 - [x] poll.md — 投票
 - [x] images/cover.png — 封面图（900x383，不含标题文字）
-- [ ] images/ — 正文配图（5张需要，2张已有，3张待生成）
+- [x] images/ — 正文配图（5张，全部就绪）
 
 ## 简介（3个备选，每个≤70字）
 1. 一个$200的订阅吃掉数千美元算力。顺着这条裂缝往上游追：芯片、液冷、核电站、推理优化——从封号事件到一条正在重塑的万亿产业链。
@@ -17,11 +20,11 @@
 
 | 图片 | 对应文章位置 | 状态 |
 |------|------------|------|
-| images/img_0_claude_code_growth.png | "如果你顺着它往上游看"之后，Claude Code收入增长双轴折线图 | ❌ 待生成 |
-| images/img_0_compute_amplification.png | blockquote"粗估"之后，算力倍增效应阶梯图 | ✅ 已有 |
-| images/img_0_nvidia_inference_share.png | "剩下的70%空间"之后，推理芯片市场份额面积图 | ✅ 已有 |
-| images/img_3_air_vs_liquid_cooling.png | 液冷段落之后，风冷vs液冷物理极限对比图 | ❌ 待生成 |
-| images/img_4_smr_timeline.png | blockquote"130种技术路线"之后，全球核能/SMR项目进度时间轴 | ❌ 待生成 |
+| images/img_0_claude_code_growth.png | "如果你顺着它往上游看"之后，Claude Code收入增长双轴折线图 | ✅ |
+| images/img_0_compute_amplification.png | blockquote"粗估"之后，算力倍增效应阶梯图 | ✅ |
+| images/img_0_nvidia_inference_share.png | "剩下的70%空间"之后，推理芯片市场份额面积图 | ✅ |
+| images/img_3_air_vs_liquid_cooling.png | 液冷段落之后，风冷vs液冷物理极限对比图 | ✅ |
+| images/img_4_smr_timeline.png | blockquote"130种技术路线"之后，全球核能/SMR项目进度时间轴 | ✅ |
 
 ## 发布步骤
 1. 生成3张缺失配图（见上表）

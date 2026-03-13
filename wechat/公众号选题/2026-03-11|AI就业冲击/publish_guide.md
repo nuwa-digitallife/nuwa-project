@@ -1,13 +1,16 @@
-# 发布指南：消失的失业潮
+# 发布指南：AI就业冲击
+
+**标题：** CEO预言AI大裁员，失业数据说：啥也没发生
+**简介：** CEO们喊"18个月白领全军覆没"，劳动力数据说"啥也没发生"。顺着产业链追踪发现：失业潮没消失，只是换了统计数据捕捉不到的形态。
 
 ## 文件清单
 
-- [ ] article.md — 终稿
-- [ ] article_mdnice.md — mdnice排版版
-- [ ] review_report.md — Review报告
-- [ ] poll.md — 投票
-- [ ] images/cover.png — 封面图（900x383，不含标题文字）
-- [ ] images/ — 正文配图
+- [x] article.md — 终稿
+- [x] article_mdnice.md — mdnice排版版
+- [x] review_report.md — Review报告
+- [x] poll.md — 投票
+- [x] images/cover.png — 封面图（900x383，不含标题文字）
+- [x] images/ — 正文配图（6张，全部就绪）
 
 ## 简介（3个备选，每个≤70字）
 
