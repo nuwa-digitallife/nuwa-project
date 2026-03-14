@@ -1,0 +1,19 @@
+{
+  "topic_dir": "/Users/apple/Desktop/nuwa-project/wechat/公众号选题/2026-03-01|OpenClaw算力涟漪",
+  "last_step": "verify",
+  "completed_steps": [
+    "upload_images",
+    "mdnice",
+    "paste",
+    "inject_images",
+    "title",
+    "desc",
+    "cover",
+    "original",
+    "reward",
+    "poll",
+    "save",
+    "verify"
+  ],
+  "timestamp": "2026-03-14T16:30:03"
+}

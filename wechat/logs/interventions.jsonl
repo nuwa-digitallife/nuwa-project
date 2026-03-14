@@ -19,3 +19,15 @@
 {"timestamp": "2026-03-11T19:30:00", "action": "pass3_review.md 新增结构覆盖一致性检查项（标题实体→正文展开→总结段无冷启动）", "target": "write_engine/prompts/pass3_review.md", "trigger": "世界模型文章 NVIDIA 标题有名但正文65行未提，路线总结冷启动"}
 {"timestamp": "2026-03-11T19:30:00", "action": "wechat_automator.py 新增 cleanup_stale_dialogs() + one_click_publish.py Step 5.5 调用", "target": "publish/wechat_automator.py + one_click_publish.py", "trigger": "二次运行时残留弹窗拦截所有后续点击"}
 {"timestamp": "2026-03-11T10:30:00", "action": "Fixed \\\! escape in article_mdnice.md preventing images from rendering in mdnice", "target": "article_mdnice.md image syntax", "trigger": "Images missing after publish — mdnice treated \\\![]() as escaped text, not images"}
+{"timestamp": "2026-03-13T20:30:00", "action": "记录：发布必须走 one_click_publish.py 脚本，脚本卡住就修脚本，不要手动拼步骤绕开", "target": "行为准则/MEMORY.md", "trigger": "用户干预：麦老在 dry-run 卡住后试图用 playwright 手动跑 mdnice，用户指出应该修脚本而不是绕开"}
+{"timestamp": "2026-03-14T00:30:00", "action": "记录：发布后必须自己打开截图检查正文+配图，不能看到DONE就汇报成功", "target": "行为准则/MEMORY.md + one_click_publish.py 验证逻辑", "trigger": "用户指出：最后一道关不检查问题更大。AI就业冲击明明2/6图却直接汇报成功"}
+{"timestamp": "2026-03-14T22:00:00+08:00", "action": "发现 enable_original 强填 author 字段（memory 写不用填），删除 70 行代码", "target": "wechat_automator.py enable_original()", "trigger": "agent 用 6 种方法尝试填字段全失败，2 小时后才查 memory"}
+{"timestamp": "2026-03-14T22:30:00+08:00", "action": "发现 _launch_chrome_cdp 有 pkill -9 杀 Chrome，改为安全检测", "target": "wechat_automator.py _launch_chrome_cdp()", "trigger": "用户指出'为啥不是代码里启动'后写了自动启动，但带了 pkill"}
+{"timestamp": "2026-03-14T22:45:00+08:00", "action": "提炼主动注入公理：被动记忆无效，经验必须主动注入", "target": "CLAUDE.md + MEMORY.md + publish-wechat skill", "trigger": "反复调试已记录在 memory 的问题，用户多次干预无效"}
+{"timestamp": "2026-03-14T23:00:00+08:00", "action": "发现 Playwright .click() 在微信编辑器中系统性失败，改 paste_clipboard/cdp_type/set_cover 为 JS evaluate", "target": "wechat_automator.py 多个方法", "trigger": "3 次全 pipeline 运行，标题/简介/投票全部超时"}
+{"timestamp": "2026-03-14T23:30:00+08:00", "action": "用户愤怒：全 pipeline 重跑 3 次而非只重跑失败步骤，浪费时间", "target": "one_click_publish.py 缺 resume 机制", "trigger": "用户指出'最短路径'原则，不该重做已完成步骤"}
+{"timestamp": "2026-03-14T23:50:00+08:00", "action": "用户愤怒：之前能发现在不能发，乱改代码导致回退", "target": "发布管线稳定性", "trigger": "之前可以发布的功能现在全部失败"}
+{"timestamp": "2026-03-14T12:10:00", "action": "视觉验证从被动记忆升级为代码强制：verify_with_claude失败=整篇FAILED，不再try/except静默吞掉", "target": "one_click_publish.py verify步骤", "trigger": "用户指出落成代码才是根本解法，被动记忆无效是女娲核心公理"}
+{"timestamp": "2026-03-14T12:15:00", "action": "MEMORY.md顶部加铁律checklist（6条），每次动手前/交付前必读。用户提出第5条：不急着修症状先看根因，目的是下次不犯", "target": "MEMORY.md", "trigger": "用户指出需要轻量化执行前必读机制，类似skill逐步展开"}
+{"timestamp": "2026-03-14T16:30:00", "action": "要求固化预览页验证为代码，不能靠记忆", "target": "one_click_publish.py verify 步骤", "trigger": "agent 反复手动截图验证而不是写进代码，用户多次干预"}
+{"timestamp": "2026-03-14T16:30:00", "action": "要求每篇文章新开 tab + 预览 tab 保留不关", "target": "wechat_automator.py new_post/open_draft_preview", "trigger": "用户指出下一篇需要新 tab，预览应保留方便人工查看"}

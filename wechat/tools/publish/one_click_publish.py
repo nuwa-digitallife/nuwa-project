@@ -4,30 +4,34 @@
 
 流程:
   1. 读取 article_mdnice.md + publish_guide.md + images/
-  2. Playwright 打开 mdnice.com → 粘贴 markdown → 选橙心主题 → 复制富文本
-  3. Playwright CDP 连接微信编辑器:
+  2. CDP Chrome tab 中打开 mdnice → 粘贴 markdown → 选橙心主题 → 复制富文本
+  3. CDP 连接微信编辑器:
      a. 新建图文 → 粘贴富文本
      b. 设标题/简介
-     c. HTTPS 服务器 → 上传配图到微信 CDN
+     c. 上传配图到微信 CDN（base64，不依赖 HTTPS 服务器）
      d. 上传封面图
      e. 开启原创+赞赏
      f. 删除空表格 + 保存
-  4. 截图验证 → 通知
+  4. 草稿列表验证 + Claude 视觉验证 → 结构化报告
 
 使用:
   python one_click_publish.py --topic-dir "wechat/公众号选题/2026-02-21|机器人棋局"
-  python one_click_publish.py --topic-dir ... --dry-run      # 只走 mdnice 排版+截图，不操作微信
-  python one_click_publish.py --topic-dir ... --cdp-url http://localhost:9222
+  python one_click_publish.py --topic-dirs "dir1" "dir2" "dir3"   # 多篇
+  python one_click_publish.py --topic-dir ... --dry-run           # 只走 mdnice 排版
+  python one_click_publish.py --topic-dir ... --resume-from title # 断点续跑
 """
 
 import argparse
 import asyncio
+import json
 import os
 import re
 import subprocess
 import sys
 import time
 from pathlib import Path
+
+from publish_types import ArticleResult, PublishReport, StepResult, StepStatus
 
 # 确保 CDP 和 Playwright 连接不走代理
 os.environ.setdefault("NO_PROXY", "localhost,127.0.0.1")
@@ -36,18 +40,74 @@ os.environ.setdefault("no_proxy", "localhost,127.0.0.1")
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent.parent  # nuwa-project/
 
-# mdnice
-MDNICE_URL = "https://editor.mdnice.com/"
-MDNICE_THEME = "橙心"
+# 发布步骤（有序）— resume 机制按此顺序执行
+PUBLISH_STEPS = [
+    "upload_images",    # 上传图片到微信 CDN
+    "mdnice",           # mdnice 排版 + 复制富文本到剪贴板
+    "paste",            # 新建图文 + 粘贴正文
+    "inject_images",    # 注入配图到编辑器（mdnice 未带入时的兜底）
+    "title",            # 设置标题
+    "desc",             # 设置简介
+    "cover",            # 设置封面图
+    "original",         # 开启原创
+    "reward",           # 开启赞赏
+    "poll",             # 插入投票
+    "save",             # 清除空表格 + 保存
+    "verify",           # 验证草稿（8项完整验收）
+]
+
+
+def checkpoint_path(topic_dir: Path) -> Path:
+    """Per-article checkpoint file"""
+    return topic_dir / "_publish_checkpoint.json"
+
+
+def load_checkpoint(topic_dir: Path) -> dict:
+    """加载 checkpoint"""
+    cp = checkpoint_path(topic_dir)
+    if not cp.exists():
+        return {}
+    try:
+        data = json.loads(cp.read_text(encoding="utf-8"))
+        return data
+    except Exception:
+        return {}
+
+
+def save_checkpoint(topic_dir: Path, step: str, completed_steps: list, extra: dict = None):
+    """保存 checkpoint（保留已有的 extra 数据如 cdn_map）"""
+    # 先读取已有 checkpoint，保留之前步骤写入的 extra 数据
+    existing = load_checkpoint(topic_dir)
+    data = {
+        "topic_dir": str(topic_dir),
+        "last_step": step,
+        "completed_steps": completed_steps,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+    # 保留已有的非核心字段（如 cdn_map）
+    for k, v in existing.items():
+        if k not in data:
+            data[k] = v
+    # 新 extra 覆盖旧值
+    if extra:
+        data.update(extra)
+    checkpoint_path(topic_dir).write_text(
+        json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+
+def clear_checkpoint(topic_dir: Path):
+    """清除 checkpoint"""
+    cp = checkpoint_path(topic_dir)
+    if cp.exists():
+        cp.unlink()
+
+
+    # verify_with_claude 已删除 — 用 open_draft_preview() 代替（打开预览页截图，不调 AI）
 
 
 def parse_publish_guide(guide_path: Path) -> dict:
-    """从 publish_guide.md 提取发布信息
-
-    兼容两种格式：
-    - 行内格式: **标题：** xxx
-    - Section 格式: ## 简介\n\n**xxx**
-    """
+    """从 publish_guide.md 提取发布信息"""
     text = guide_path.read_text(encoding="utf-8")
     info = {
         "title": "",
@@ -63,7 +123,7 @@ def parse_publish_guide(guide_path: Path) -> dict:
     if m:
         info["title"] = m.group(1).strip()
 
-    # 提取简介 — 多种格式
+    # 提取简介
     m = re.search(r"\*\*简介[：:]\*\*\s*(.+)", text)
     if not m:
         m = re.search(r"\*\*简介\*\*[：:]\s*(.+)", text)
@@ -81,7 +141,7 @@ def parse_publish_guide(guide_path: Path) -> dict:
     if m:
         info["cover"] = m.group(1).strip().split("（")[0].split("(")[0]
 
-    # 提取图片 — 表格中（兼容 backtick、裸路径、带/不带 images/ 前缀）
+    # 提取图片
     for m in re.finditer(r"\|\s*`?(images/\S+?)`?\s*\|", text):
         img = m.group(1).strip()
         if img not in info["images"] and img != info["cover"]:
@@ -103,408 +163,192 @@ def parse_publish_guide(guide_path: Path) -> dict:
 
 
 def parse_poll_file(poll_path: Path) -> dict:
-    """从 poll.md 提取投票信息：question + options"""
+    """从 poll.md 提取投票信息"""
     if not poll_path.exists():
         return {}
     text = poll_path.read_text(encoding="utf-8")
     result = {"question": "", "options": []}
-    # 提取问题（兼容两种格式：## 问题\n内容  或  问题：内容）
     m = re.search(r"##\s*问题\s*\n+(.+)", text)
     if not m:
         m = re.search(r"问题[：:]\s*(.+)", text)
     if m:
         result["question"] = m.group(1).strip()
-    # 提取选项（数字列表）
     for m in re.finditer(r"^\d+\.\s*(.+)", text, re.MULTILINE):
         result["options"].append(m.group(1).strip())
     return result
 
 
-def start_https_server(images_dir: Path, port: int = 18443) -> subprocess.Popen:
-    """启动 HTTPS 图片服务器（后台进程）"""
-    # 先杀掉可能残留的旧服务器
-    try:
-        result = subprocess.run(
-            ["lsof", "-ti", f":{port}"], capture_output=True, text=True, timeout=5
-        )
-        if result.stdout.strip():
-            for pid in result.stdout.strip().split('\n'):
-                subprocess.run(["kill", pid.strip()], timeout=5)
-            time.sleep(1)
-    except Exception:
-        pass
+async def publish_one(auto, topic_dir: Path, resume_from: str = None,
+                      dry_run: bool = False) -> ArticleResult:
+    """发布单篇文章，收集每步 StepResult → ArticleResult"""
 
-    server_script = SCRIPT_DIR / "https_server.py"
-    proc = subprocess.Popen(
-        [sys.executable, str(server_script), str(images_dir), str(port)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    time.sleep(1)
-    if proc.poll() is not None:
-        stderr = proc.stderr.read().decode()
-        print(f"HTTPS server failed: {stderr}", file=sys.stderr)
-        return None
-    print(f"HTTPS server started on port {port} (PID {proc.pid})")
-    return proc
+    article = ArticleResult(topic_dir=str(topic_dir))
 
-
-MDNICE_PROFILE = os.path.expanduser("~/.mdnice-profile")
-
-
-async def _hide_modals(page):
-    """JS 强制隐藏 mdnice 的所有 ant-modal 弹窗（版本更新、登录提示等）"""
-    await page.evaluate("""() => {
-        document.querySelectorAll(
-            '.ant-modal-root, .ant-modal-mask, .ant-modal-wrap, .global-mask'
-        ).forEach(el => el.style.display = 'none');
-    }""")
-    await asyncio.sleep(0.3)
-
-
-async def _ensure_article(page, md_text: str):
-    """确保有活跃文章（预览区才能渲染）。
-
-    如果没有活跃文章，通过 Cmd+V 触发"新增文章"对话框创建一篇。
-    创建后编辑器会被清空，需要重新粘贴内容。
-    返回 True 表示有活跃文章（可能是已有的或新创建的）。
-    """
-    # 检查是否已有活跃文章（#nice 预览区有内容）
-    has_article = await page.evaluate("""() => {
-        const nice = document.querySelector('#nice');
-        return nice && nice.children.length > 0;
-    }""")
-    if has_article:
-        return True
-
-    print("  No active article, creating one...")
-    # Cmd+V 粘贴内容 → 触发 "新增文章" 对话框
-    subprocess.run(["pbcopy"], input=md_text.encode("utf-8"), timeout=5)
-    editor = await page.query_selector(".CodeMirror")
-    if editor:
-        await editor.click(force=True)
-        await asyncio.sleep(0.3)
-    await page.keyboard.press("Meta+v")
-    await asyncio.sleep(2)
-
-    # 恢复被隐藏的 modal（之前 _hide_modals 可能隐藏了）
-    await page.evaluate("""() => {
-        document.querySelectorAll('.ant-modal-root, .ant-modal-mask, .ant-modal-wrap')
-            .forEach(el => el.style.display = '');
-    }""")
-    await asyncio.sleep(0.5)
-
-    # 处理"新增文章"对话框
-    has_dialog = await page.evaluate("""() => {
-        const wraps = document.querySelectorAll('.ant-modal-wrap');
-        for (const w of wraps) {
-            if (getComputedStyle(w).display !== 'none' && w.textContent.includes('新增文章'))
-                return true;
-        }
-        return false;
-    }""")
-    if not has_dialog:
-        return False
-
-    # 选择文件夹（ant-select 下拉框）
-    select_el = await page.query_selector('.ant-modal .ant-select-selector')
-    if select_el:
-        await select_el.click(force=True)
-        await asyncio.sleep(1)
-        first_opt = await page.query_selector('.ant-select-item-option')
-        if first_opt and await first_opt.is_visible():
-            await first_opt.click(force=True)
-            await asyncio.sleep(0.5)
-
-    # 点击"新增"按钮
-    create_btn = await page.query_selector('.ant-modal .ant-btn-primary')
-    if create_btn and not await create_btn.is_disabled():
-        await create_btn.click(force=True)
-        await asyncio.sleep(3)
-        print("  Article created")
-        await _hide_modals(page)
-        return True
-
-    return False
-
-
-async def mdnice_render(md_text: str, screenshot_dir: Path = None,
-                        keep_browser: bool = False) -> bool:
-    """用 Playwright 持久化浏览器操作 mdnice.com 排版，复制富文本到剪贴板
-
-    使用 persistent context 保持登录状态，无需每次扫码。
-    流程：打开 mdnice → 关闭弹窗 → 确保有文章 → 设置内容 → 选主题 → 复制到微信
-
-    Args:
-        keep_browser: True 时不关闭浏览器（调试/dry-run 用）
-    """
-    from playwright.async_api import async_playwright
-
-    print("--- mdnice 排版 ---")
-
-    # 清理可能残留的锁文件
-    for lock in ("SingletonLock", "SingletonCookie", "SingletonSocket"):
-        lock_path = os.path.join(MDNICE_PROFILE, lock)
-        if os.path.exists(lock_path):
-            os.remove(lock_path)
-
-    pw = await async_playwright().start()
-    context = await pw.chromium.launch_persistent_context(
-        user_data_dir=MDNICE_PROFILE,
-        headless=False,
-        viewport={"width": 1280, "height": 720},
-    )
-    page = context.pages[0] if context.pages else await context.new_page()
-
-    try:
-        # 1. 打开 mdnice
-        print("  Opening mdnice.com...")
-        await page.goto(MDNICE_URL, wait_until="domcontentloaded", timeout=30000)
-        await asyncio.sleep(3)
-
-        # 1.5 检测登录状态，未登录则等待扫码
-        needs_login = await page.evaluate("""() => {
-            const modals = document.querySelectorAll('.ant-modal-wrap');
-            for (const m of modals) {
-                if (getComputedStyle(m).display !== 'none' && m.textContent.includes('登录'))
-                    return true;
-            }
-            return !document.querySelector('.CodeMirror');
-        }""")
-        if needs_login:
-            qr_path = "/tmp/mdnice_qr_login.png"
-            await page.screenshot(path=qr_path)
-            print(f"\n{'='*50}")
-            print("⏳ mdnice 未登录，请在弹出的浏览器窗口扫码登录")
-            print(f"   截图已保存: {qr_path}")
-            print(f"{'='*50}\n")
-            max_wait, elapsed = 120, 0
-            while elapsed < max_wait:
-                await asyncio.sleep(3)
-                elapsed += 3
-                has_editor = await page.evaluate(
-                    "() => !!document.querySelector('.CodeMirror')"
-                )
-                if has_editor:
-                    print("  ✅ mdnice 登录成功！")
-                    break
-                if elapsed % 15 == 0:
-                    await page.screenshot(path=qr_path)
-                    print(f"   仍在等待扫码... ({elapsed}s/{max_wait}s)")
-            else:
-                print("  ERROR: mdnice 登录超时（120秒）", file=sys.stderr)
-                return False
-
-        await _hide_modals(page)
-
-        if screenshot_dir:
-            await page.screenshot(path=str(screenshot_dir / "_mdnice_01_loaded.png"))
-
-        # 2. 确保有活跃文章（否则预览不渲染、复制不工作）
-        await _ensure_article(page, md_text)
-
-        # 3. 通过剪贴板粘贴 markdown（Cmd+V 触发预览渲染，setValue 不行）
-        print("  Pasting markdown content...")
-        subprocess.run(["pbcopy"], input=md_text.encode("utf-8"), timeout=5)
-        editor = await page.query_selector(".CodeMirror")
-        if editor:
-            await editor.click(force=True)
-            await asyncio.sleep(0.3)
-            await page.keyboard.press("Meta+a")
-            await asyncio.sleep(0.1)
-            await page.keyboard.press("Meta+v")
-            await asyncio.sleep(3)  # 等待预览渲染
-
-        if screenshot_dir:
-            await page.screenshot(path=str(screenshot_dir / "_mdnice_02_pasted.png"))
-
-        # 4. 选择橙心主题
-        print(f"  Selecting theme: {MDNICE_THEME}...")
-        await page.click("a.nice-menu-link:has-text('主题')", force=True)
-        await asyncio.sleep(2)
-
-        # 在主题列表中找到橙心并点击其"使用"按钮
-        theme_applied = await page.evaluate("""(themeName) => {
-            const items = document.querySelectorAll('.theme-list > *');
-            for (const item of items) {
-                if (item.textContent.includes(themeName)) {
-                    const btn = item.querySelector('button');
-                    if (btn) { btn.click(); return 'OK'; }
-                }
-            }
-            return 'NOT_FOUND';
-        }""", MDNICE_THEME)
-
-        if theme_applied == "OK":
-            print(f"  Theme '{MDNICE_THEME}' applied")
-        else:
-            print(f"  WARNING: 主题 '{MDNICE_THEME}' 未找到", file=sys.stderr)
-
-        await asyncio.sleep(2)
-        await page.keyboard.press("Escape")  # 关闭主题面板
-        await asyncio.sleep(1)
-
-        if screenshot_dir:
-            await page.screenshot(path=str(screenshot_dir / "_mdnice_03_themed.png"))
-
-        # 5. 点击右侧栏微信复制按钮
-        print("  Copying formatted content for WeChat...")
-        wechat_btn = await page.query_selector("a.nice-btn-wechat")
-        if wechat_btn:
-            await wechat_btn.click(force=True)
-            await asyncio.sleep(2)
-            print("  Copied to clipboard via WeChat button")
-        else:
-            print("  WARNING: WeChat 复制按钮未找到", file=sys.stderr)
-            return False
-
-        if screenshot_dir:
-            await page.screenshot(path=str(screenshot_dir / "_mdnice_04_copied.png"))
-
-        return True
-
-    except Exception as e:
-        print(f"  mdnice error: {e}", file=sys.stderr)
-        if screenshot_dir:
-            try:
-                await page.screenshot(path=str(screenshot_dir / "_mdnice_error.png"))
-            except Exception:
-                pass
-        return False
-
-    finally:
-        if keep_browser:
-            print("  Browser kept open — Ctrl+C to close")
-            try:
-                while True:
-                    await asyncio.sleep(1)
-            except (KeyboardInterrupt, asyncio.CancelledError):
-                pass
-            finally:
-                await context.close()
-                await pw.stop()
-        else:
-            await context.close()
-            await pw.stop()
-
-
-async def publish(topic_dir: Path, dry_run: bool = False,
-                  cdp_url: str = "http://localhost:9222", port: int = 18443):
-    """完整发布流程
-
-    关键改进（v2）：
-    - 图片先上传到微信 CDN → 拿到 CDN URL → 替换 markdown 里的本地路径
-    - mdnice 渲染时图片已是 CDN URL → 富文本粘贴到编辑器后图片自动显示
-    - 原创对话框用 Playwright keyboard 输入作者（触发 Vue v-model）
-    - 验证改为检查草稿箱（不只是截图编辑器）
-    """
-
-    # ── Step 0: 验证文件 ──
+    # ── 验证文件 ──
     guide_path = topic_dir / "publish_guide.md"
     md_path = topic_dir / "article_mdnice.md"
     images_dir = topic_dir / "images"
 
     if not guide_path.exists():
-        print(f"ERROR: 缺少 {guide_path}", file=sys.stderr)
-        return 1
+        article.steps.append(StepResult("validate", StepStatus.FAILED, f"缺少 {guide_path}"))
+        return article
     if not md_path.exists():
-        print(f"ERROR: 缺少 {md_path}", file=sys.stderr)
-        return 1
+        article.steps.append(StepResult("validate", StepStatus.FAILED, f"缺少 {md_path}"))
+        return article
 
     info = parse_publish_guide(guide_path)
-    print(f"Title: {info['title']}")
-    print(f"Description: {info['description'][:50]}...")
-    print(f"Cover: {info['cover']}")
-    print(f"Images: {len(info['images'])} files")
+    article.title = info["title"]
+    print(f"\n{'='*60}")
+    print(f"  PUBLISHING: {info['title']}")
+    print(f"{'='*60}")
+    print(f"  Description: {info['description'][:50]}...")
+    print(f"  Cover: {info['cover']}")
+    print(f"  Images: {len(info['images'])} files")
 
     md_text = md_path.read_text(encoding="utf-8")
-    print(f"Markdown: {len(md_text)} chars")
+    print(f"  Markdown: {len(md_text)} chars")
 
-    # ── Dry run: 只走 mdnice，不操作微信 ──
+    # ── Resume 逻辑 ──
+    ckpt = load_checkpoint(topic_dir)
+    completed_steps = []
+
+    if resume_from:
+        if resume_from not in PUBLISH_STEPS:
+            article.steps.append(StepResult("validate", StepStatus.FAILED,
+                                            f"无效步骤 '{resume_from}'"))
+            return article
+        for s in PUBLISH_STEPS:
+            if s == resume_from:
+                break
+            completed_steps.append(s)
+        print(f"  RESUME: 从 '{resume_from}' 开始，跳过 {len(completed_steps)} 步")
+    elif ckpt.get("completed_steps"):
+        completed_steps = ckpt["completed_steps"]
+        next_step = None
+        for s in PUBLISH_STEPS:
+            if s not in completed_steps:
+                next_step = s
+                break
+        if next_step:
+            print(f"  CHECKPOINT: 从 '{next_step}' 恢复")
+        else:
+            completed_steps = []
+
+    def should_run(step: str) -> bool:
+        return step not in completed_steps
+
+    def mark_done(step: str, extra: dict = None):
+        if step not in completed_steps:
+            completed_steps.append(step)
+        save_checkpoint(topic_dir, step, completed_steps, extra)
+
+    # ── Dry run ──
     if dry_run:
-        ok = await mdnice_render(md_text, screenshot_dir=topic_dir,
-                                 keep_browser=True)
-        if not ok:
-            print("ERROR: mdnice 排版失败", file=sys.stderr)
-            return 1
-        print("\n=== DRY RUN ===")
-        print("mdnice 排版完成，富文本已在剪贴板")
-        final_shot = topic_dir / "_mdnice_03_themed.png"
-        if final_shot.exists():
-            subprocess.run(["open", str(final_shot)], timeout=5)
-            print(f"已打开截图: {final_shot}")
-        return 0
+        result = await auto.mdnice_render_in_tab(md_text, screenshot_dir=topic_dir)
+        article.steps.append(result)
+        if result.ok:
+            print("\n=== DRY RUN: mdnice 排版完成 ===")
+        return article
 
-    # ── Step 1: 连接微信后台 + 上传图片到 CDN ──
-    sys.path.insert(0, str(SCRIPT_DIR))
-    from wechat_automator import WeChatAutomator
+    # ── 每篇发布前复查登录态 ──
+    if not await auto.check_login():
+        article.steps.append(StepResult("login", StepStatus.FAILED, "登录超时"))
+        return article
 
-    auto = WeChatAutomator(cdp_url=cdp_url)
-    await auto.connect()
+    # 确保有 MP 页面（如果跳过 paste 步骤，找已有编辑器）
+    if not should_run("paste"):
+        found_editor = await auto.find_editor_page()
+        if not found_editor:
+            article.steps.append(StepResult("paste", StepStatus.FAILED,
+                                            "未找到编辑器页面（resume 需要已打开的编辑器）"))
+            return article
+    else:
+        mp_ready = await auto.find_or_create_mp_page()
+        if not mp_ready:
+            article.steps.append(StepResult("paste", StepStatus.FAILED, "无法访问微信后台"))
+            return article
 
-    # 确保有可用的 MP 页面（用于上传图片等 API 调用）
-    mp_ready = await auto.find_or_create_mp_page()
-    if not mp_ready:
-        print("ERROR: 无法访问微信后台，请先在 Chrome 中登录", file=sys.stderr)
-        await auto.close()
-        return 1
+        # 关闭残留的失效编辑器 tab（用 CDP API 而非 page.close，后者会挂）
+        for page in list(auto.context.pages):
+            if page != auto.page and ("appmsg_edit" in page.url or "appmsg" in page.url):
+                if "token=" not in page.url:
+                    try:
+                        cdp = await page.context.new_cdp_session(page)
+                        await cdp.send("Page.close")
+                    except Exception:
+                        pass  # 关不掉就算了，不影响主流程
 
-    # 关闭之前残留的失效编辑器 tab
-    for page in list(auto.context.pages):
-        if page != auto.page and ("appmsg_edit" in page.url or "appmsg" in page.url):
-            if "token=" not in page.url:
-                await page.close()
-                print(f"  Closed stale tab: {page.url[:60]}")
-
-    # 上传所有图片到微信 CDN，收集 CDN URL 映射（base64，不依赖 HTTPS 服务器）
-    cdn_map = {}  # "images/xxx.png" -> "https://mmbiz.qpic.cn/..."
-    # 从 publish_guide 获取列表，同时扫描 images/ 目录补充实际存在的文件
+    print(f"  [DEBUG] Building image list...")
+    # ── upload_images ──
+    cdn_map = {}
     all_images = list(info["images"])
     if images_dir.exists():
-        for img_file in sorted(images_dir.glob("img_*.png")):
+        for img_file in sorted(images_dir.glob("img_*.png")) + sorted(images_dir.glob("img_*.jpg")):
             rel = f"images/{img_file.name}"
             if rel not in all_images:
                 all_images.append(rel)
-        for img_file in sorted(images_dir.glob("img_*.jpg")):
-            rel = f"images/{img_file.name}"
-            if rel not in all_images:
-                all_images.append(rel)
+
+    # ⛔ 封面唯一化：用标题 hash 给 cover 命名，防止多篇文章 cover.png 互相覆盖
+    import hashlib, shutil
+    cover_unique_name = None
+    if info["cover"]:
+        cover_src = topic_dir / info["cover"]
+        if cover_src.exists():
+            slug = hashlib.md5(info["title"].encode()).hexdigest()[:8]
+            cover_unique_name = f"cover_{slug}{cover_src.suffix}"
+            cover_tmp = cover_src.parent / cover_unique_name
+            shutil.copy2(cover_src, cover_tmp)
+            # 用唯一名替换 all_images 中的 cover 路径
+            unique_rel = f"images/{cover_unique_name}"
+            info["cover"] = unique_rel
+            print(f"  Cover renamed: {cover_src.name} → {cover_unique_name}")
+
     if info["cover"] and info["cover"] not in all_images:
         all_images.append(info["cover"])
 
-    https_proc = None
-    if images_dir.exists() and all_images:
-        print(f"\n--- 上传 {len(all_images)} 张图片到 CDN ---")
-        for img_rel in all_images:
-            img_path = topic_dir / img_rel
-            if not img_path.exists():
-                print(f"  SKIP (not found): {img_rel}")
-                continue
-            try:
-                result = await auto.upload_image_file(img_path)
-                if result.get("ok") and result.get("cdn_url"):
-                    cdn_map[img_rel] = result["cdn_url"]
-                    cdn_map[img_path.name] = result["cdn_url"]
-            except Exception as e:
-                print(f"  WARNING: Upload failed for {img_path.name}: {e}", file=sys.stderr)
-            await asyncio.sleep(0.5)
+    if should_run("upload_images"):
+        if images_dir.exists() and all_images:
+            print(f"\n--- 上传 {len(all_images)} 张图片到 CDN ---")
+            failed_uploads = []
+            for img_rel in all_images:
+                img_path = topic_dir / img_rel
+                if not img_path.exists():
+                    continue
+                try:
+                    result = await auto.upload_image_file(img_path)
+                    if result.get("ok") and result.get("cdn_url"):
+                        cdn_map[img_rel] = result["cdn_url"]
+                        cdn_map[img_path.name] = result["cdn_url"]
+                    else:
+                        failed_uploads.append(img_rel)
+                except Exception as e:
+                    failed_uploads.append(img_rel)
+                    print(f"  Upload failed: {img_rel}: {e}", file=sys.stderr)
+                await asyncio.sleep(0.5)
 
-    print(f"\n  CDN mapping: {len(cdn_map)} images uploaded")
-    for local, cdn in cdn_map.items():
-        if "/" in local:  # 只打印带路径的
-            print(f"    {local} → {cdn[:60]}...")
+            print(f"  CDN mapping: {len(cdn_map)} images uploaded")
+            step_msg = f"{len(cdn_map)} uploaded"
+            if failed_uploads:
+                step_msg += f", {len(failed_uploads)} failed: {', '.join(failed_uploads)}"
+            article.steps.append(StepResult("upload_images", StepStatus.SUCCESS, step_msg))
+        else:
+            article.steps.append(StepResult("upload_images", StepStatus.SKIPPED, "无图片"))
+        mark_done("upload_images", {"cdn_map": {k: v for k, v in cdn_map.items() if "/" in k}})
+    else:
+        saved_cdn = ckpt.get("cdn_map", {})
+        if saved_cdn:
+            cdn_map.update(saved_cdn)
+            for k, v in list(saved_cdn.items()):
+                cdn_map[Path(k).name] = v
+        article.steps.append(StepResult("upload_images", StepStatus.SKIPPED,
+                                        f"restored {len(saved_cdn)} from checkpoint"))
 
-    # ── Step 2: 替换 markdown 中的本地路径为 CDN URL ──
+    # ── 替换本地路径为 CDN URL ──
     md_for_mdnice = md_text
     for local_path, cdn_url in cdn_map.items():
         md_for_mdnice = md_for_mdnice.replace(local_path, cdn_url)
 
-    replacements = md_text.count("images/") - md_for_mdnice.count("images/")
-    print(f"  Replaced {replacements} image references with CDN URLs")
-
-    # ── Step 2.5: 修复 mdnice 加粗+引号渲染 bug ──
-    # mdnice 的 markdown 解析器在 ** 紧邻引号字符时不触发粗体
-    # 例如 **"text"** 不会加粗，改用 <strong> HTML 标签
+    # ── 修复 mdnice 加粗+引号渲染 bug ──
     bold_quote_fixes = 0
     def _fix_bold_quote(m):
         nonlocal bold_quote_fixes
@@ -517,186 +361,278 @@ async def publish(topic_dir: Path, dry_run: bool = False,
         md_for_mdnice,
     )
     if bold_quote_fixes:
-        print(f"  Fixed {bold_quote_fixes} bold+quote patterns for mdnice")
+        print(f"  Fixed {bold_quote_fixes} bold+quote patterns")
 
-    # ── Step 3: mdnice 排版 → 富文本到剪贴板 ──
-    ok = await mdnice_render(md_for_mdnice, screenshot_dir=topic_dir)
-    if not ok:
-        print("ERROR: mdnice 排版失败", file=sys.stderr)
-        if https_proc:
-            https_proc.terminate()
-        await auto.close()
-        return 1
+    # ── mdnice ──
+    if should_run("mdnice"):
+        result = await auto.mdnice_render_in_tab(md_for_mdnice, screenshot_dir=topic_dir)
+        article.steps.append(result)
+        if not result.ok:
+            return article  # mdnice 失败则无法继续
+        mark_done("mdnice")
+    else:
+        article.steps.append(StepResult("mdnice", StepStatus.SKIPPED))
 
-    # ── Step 4: 新建图文 + 粘贴 ──
-    print("\n--- 新建图文 ---")
-    await auto.new_post()
-    await asyncio.sleep(2)
+    # ── paste ──
+    if should_run("paste"):
+        print("\n--- 新建图文 ---")
+        await auto.new_post()
+        await asyncio.sleep(2)
+        print("\n--- 粘贴正文 ---")
+        result = await auto.paste_clipboard()
+        article.steps.append(result)
+        await asyncio.sleep(3)
+        mark_done("paste")
+    else:
+        article.steps.append(StepResult("paste", StepStatus.SKIPPED))
 
-    print("\n--- 粘贴正文 ---")
-    await auto.paste_clipboard()
-    await asyncio.sleep(3)  # 给编辑器时间处理富文本
+    # ── inject_images ──
+    if should_run("inject_images"):
+        if cdn_map:
+            print(f"\n--- 注入配图 ({len(cdn_map)} URLs) ---")
+            result = await auto.inject_images(cdn_map)
+            article.steps.append(result)
+            if result.ok:
+                await asyncio.sleep(2)
+        else:
+            article.steps.append(StepResult("inject_images", StepStatus.SKIPPED, "no cdn_map"))
+        mark_done("inject_images")
+    else:
+        article.steps.append(StepResult("inject_images", StepStatus.SKIPPED))
 
-    # ── Step 5: 设置标题和简介 ──
-    if info["title"]:
-        print(f"\n--- 设置标题: {info['title'][:30]}... ---")
-        try:
-            await auto.set_title(info["title"])
-        except Exception as e:
-            print(f"  WARNING: 设置标题失败: {e}", file=sys.stderr)
-        await asyncio.sleep(0.5)
+    # ── title ──
+    if should_run("title"):
+        if info["title"]:
+            print(f"\n--- 设置标题 ---")
+            result = await auto.set_title(info["title"])
+            article.steps.append(result)
+        else:
+            article.steps.append(StepResult("title", StepStatus.SKIPPED, "无标题"))
+        mark_done("title")
+    else:
+        article.steps.append(StepResult("title", StepStatus.SKIPPED))
 
-    if info["description"]:
-        print(f"\n--- 设置简介: {info['description'][:30]}... ---")
-        try:
-            await auto.set_description(info["description"])
-        except Exception as e:
-            print(f"  WARNING: 设置简介失败: {e}", file=sys.stderr)
-        await asyncio.sleep(0.5)
+    # ── desc ──
+    if should_run("desc"):
+        if info["description"]:
+            print(f"\n--- 设置简介 ---")
+            result = await auto.set_description(info["description"])
+            article.steps.append(result)
+        else:
+            article.steps.append(StepResult("desc", StepStatus.SKIPPED, "无简介"))
+        mark_done("desc")
+    else:
+        article.steps.append(StepResult("desc", StepStatus.SKIPPED))
 
-    # ── Step 5.5: 清理残留弹窗（防止二次运行脏状态） ──
-    print("\n--- 清理残留弹窗 ---")
+    # ── 清理残留弹窗 ──
     await auto.cleanup_stale_dialogs()
 
-    # ── Step 6a: 设置封面图 ──
-    if info["cover"]:
-        cover_name = Path(info["cover"]).name
-        print(f"\n--- 设置封面图: {cover_name} ---")
-        try:
-            ok = await auto.set_cover_image(cover_name)
-            if not ok:
-                print("  WARNING: 封面图设置失败，请手动设置", file=sys.stderr)
-        except Exception as e:
-            print(f"  WARNING: 封面图设置异常: {e}", file=sys.stderr)
-        await asyncio.sleep(1)
-
-    # ── Step 6b: 开启原创 ──
-    print("\n--- 开启原创 ---")
-    try:
-        await auto.enable_original()
-    except Exception as e:
-        print(f"WARNING: 原创开启失败: {e}", file=sys.stderr)
-    await asyncio.sleep(1)
-
-    # ── Step 6c: 开启赞赏 ──
-    print("\n--- 开启赞赏 ---")
-    try:
-        await auto.enable_reward()
-    except Exception as e:
-        print(f"WARNING: 赞赏开启失败: {e}", file=sys.stderr)
-    await asyncio.sleep(1)
-
-    # ── Step 7: 插入投票 ──
-    poll_path = topic_dir / "poll.md"
-    poll_info = parse_poll_file(poll_path)
-    if poll_info.get("question") and poll_info.get("options"):
-        print(f"\n--- 插入投票: {poll_info['question'][:30]}... ---")
-        try:
-            ok = await auto.add_poll(poll_info["question"], poll_info["options"])
-            if not ok:
-                print("  WARNING: 投票插入失败，请手动添加", file=sys.stderr)
-        except Exception as e:
-            print(f"  WARNING: 投票插入异常: {e}", file=sys.stderr)
-        await asyncio.sleep(1)
+    # ── cover ──
+    if should_run("cover"):
+        if info["cover"]:
+            cover_name = Path(info["cover"]).name
+            print(f"\n--- 设置封面图: {cover_name} ---")
+            result = await auto.set_cover_image(cover_name)
+            article.steps.append(result)
+        else:
+            article.steps.append(StepResult("cover", StepStatus.SKIPPED, "无封面"))
+        mark_done("cover")
     else:
-        print("\n--- 无投票文件，跳过 ---")
+        article.steps.append(StepResult("cover", StepStatus.SKIPPED))
 
-    # ── Step 8: 清除空表格 + 保存 ──
-    print("\n--- 清除空表格 ---")
-    await auto.remove_empty_tables()
-
-    print("\n--- 保存草稿 ---")
-    await auto.trigger_save()
-    await asyncio.sleep(3)
-
-    # ── Step 8: 验证草稿（内容级检查） ──
-    print(f"\n--- 验证草稿 ---")
-    draft_screenshot = str(topic_dir / "_draft_verify.png")
-    found = await auto.verify_draft(info["title"], screenshot_path=draft_screenshot)
-    if found:
-        print(f"  VERIFIED: 草稿箱中找到文章")
+    # ── original ──
+    if should_run("original"):
+        print("\n--- 开启原创 ---")
+        result = await auto.enable_original()
+        article.steps.append(result)
+        await asyncio.sleep(1)
+        mark_done("original")
     else:
-        print(f"  WARNING: 草稿箱中未找到文章", file=sys.stderr)
-        await auto.screenshot(str(topic_dir / "_editor_debug.png"))
+        article.steps.append(StepResult("original", StepStatus.SKIPPED))
 
-    # ── Step 8.5: 内容验证（打开编辑器检查图片和字数） ──
-    print(f"\n--- 内容验证 ---")
-    try:
-        # 在当前编辑器页面检查正文中的图片数量
-        editor_page = auto.page
-        img_count = await editor_page.evaluate("""() => {
-            const editor = document.querySelector('#js_editor') || document.querySelector('.edui-body-container') || document.querySelector('[contenteditable]');
-            if (!editor) return -1;
-            return editor.querySelectorAll('img').length;
-        }""")
-        expected_images = len([f for f in (info.get("images") or []) if not f.endswith("cover.png")])
-        print(f"  正文图片数: {img_count} (期望: {expected_images})")
-        if img_count == 0 and expected_images > 0:
-            print(f"  ⚠️ WARNING: 正文中没有图片！图片可能未嵌入", file=sys.stderr)
-        elif img_count > 0 and img_count >= expected_images:
-            print(f"  ✅ 图片数量符合预期")
+    # ── reward ──
+    if should_run("reward"):
+        print("\n--- 开启赞赏 ---")
+        result = await auto.enable_reward()
+        article.steps.append(result)
+        await asyncio.sleep(1)
+        mark_done("reward")
+    else:
+        article.steps.append(StepResult("reward", StepStatus.SKIPPED))
 
-        # 截取编辑器正文区域用于人工复核
-        content_screenshot = str(topic_dir / "_content_verify.png")
-        await editor_page.screenshot(path=content_screenshot, full_page=True)
-        print(f"  全页截图已保存: {content_screenshot}")
-    except Exception as e:
-        print(f"  内容验证异常: {e}", file=sys.stderr)
+    # ── poll ──
+    if should_run("poll"):
+        poll_info = parse_poll_file(topic_dir / "poll.md")
+        if poll_info.get("question") and poll_info.get("options"):
+            print(f"\n--- 插入投票 ---")
+            result = await auto.add_poll(poll_info["question"], poll_info["options"])
+            article.steps.append(result)
+        else:
+            article.steps.append(StepResult("poll", StepStatus.SKIPPED, "无投票文件"))
+        await asyncio.sleep(1)
+        mark_done("poll")
+    else:
+        article.steps.append(StepResult("poll", StepStatus.SKIPPED))
 
-    # 打开验证截图给用户看
-    if os.path.exists(draft_screenshot):
-        subprocess.run(["open", draft_screenshot], timeout=5)
+    # ── save ──
+    if should_run("save"):
+        print("\n--- 保存草稿 ---")
+        result = await auto.save_draft()
+        article.steps.append(result)
+        mark_done("save")
+    else:
+        article.steps.append(StepResult("save", StepStatus.SKIPPED))
 
-    await auto.close()
+    # ── verify ──
+    # ⛔ 验证是 BLOCKING 的：DOM 检查 + Claude 视觉验证都必须通过才算成功。
+    # 视觉验证不是可选的附加步骤，而是最终判定标准。
+    # 这条规则代码化在此，任何 Agent 都跳不过。
+    if should_run("verify"):
+        print(f"\n--- 验证草稿（DOM 检查 + 视觉验证，两关都必须过） ---")
 
-    # ── Step 10: 通知 ──
-    status = "VERIFIED" if found else "UNVERIFIED"
-    # 通知文本中去掉特殊字符避免 osascript 语法错误
+        expected_img_count = len([f for f in (info.get("images") or []) if not f.endswith("cover.png")])
+
+        # 第一关：DOM 检查（标题/简介/封面/原创/赞赏/正文/配图/投票）
+        verify_result = await auto.verify_article_complete(
+            expected_title=info["title"],
+            expected_desc=info.get("desc", ""),
+            expected_image_count=expected_img_count,
+            screenshot_dir=str(topic_dir),
+        )
+        article.steps.append(verify_result)
+
+        # 草稿列表验证
+        list_result = await auto.verify_draft_in_list(info["title"], str(topic_dir))
+        article.steps.append(list_result)
+
+        # 第二关：打开草稿预览页截图（用人类的方式验证，固化为代码）
+        # ⛔ 这步是代码化的铁律：不是"记住要打开预览"，而是代码强制打开。
+        from wechat_automator import safe_screenshot
+        preview_ok = False
+        try:
+            preview_result = await auto.open_draft_preview(info["title"], str(topic_dir))
+            article.steps.append(preview_result)
+            preview_ok = preview_result.ok
+        except Exception as e:
+            article.steps.append(StepResult("preview", StepStatus.FAILED, str(e)))
+            print(f"  预览页打开失败: {e}", file=sys.stderr)
+
+        # 最终判定：DOM 检查 + 预览截图都要有
+        if verify_result.ok:
+            if preview_ok:
+                print(f"\n  ✓ DOM 检查通过 + 预览截图已保存")
+            else:
+                print(f"\n  ✓ DOM 检查通过（预览截图失败，不阻塞）")
+            clear_checkpoint(topic_dir)
+        else:
+            print(f"\n  ⛔ DOM 检查有失败项，草稿未确认。", file=sys.stderr)
+
+        mark_done("verify")
+    else:
+        article.steps.append(StepResult("verify", StepStatus.SKIPPED))
+        clear_checkpoint(topic_dir)
+
+    # 通知
+    status_text = "OK" if article.success else "ISSUES"
     safe_title = info['title'][:20].replace('"', '').replace("'", "").replace('\\', '')
     try:
         subprocess.run([
             "osascript", "-e",
-            f'display notification "草稿{status}" with title "{safe_title}"'
-        ], timeout=5)
+            f'display notification "草稿 {status_text}" with title "{safe_title}"'
+        ], timeout=5, capture_output=True)
     except Exception:
         pass
 
-    print(f"\n{'='*60}")
-    if found:
-        print(f"DONE: 草稿已保存到微信后台")
-    else:
-        print(f"WARNING: 草稿可能未保存，请手动检查")
-    print(f"验证截图: {draft_screenshot}")
-    print(f"完成项: 标题/简介/图片/投票/原创/赞赏/封面/保存")
-    print(f"{'='*60}")
-    return 0 if found else 1
+    return article
+
+
+async def publish_all(topic_dirs: list[Path], dry_run: bool = False,
+                      cdp_url: str = "http://localhost:9222",
+                      resume_from: str = None) -> PublishReport:
+    """多篇编排：连接一次 → 逐篇发布 → 停在草稿列表 → 结构化报告"""
+
+    sys.path.insert(0, str(SCRIPT_DIR))
+    from wechat_automator import WeChatAutomator
+
+    report = PublishReport()
+    auto = WeChatAutomator(cdp_url=cdp_url)
+    await auto.connect()
+
+    # 预检登录态
+    if not dry_run:
+        login_ok = await auto.check_login()
+        if not login_ok:
+            print("ERROR: 无法登录微信后台", file=sys.stderr)
+            await auto.disconnect()
+            for td in topic_dirs:
+                report.articles.append(ArticleResult(
+                    topic_dir=str(td),
+                    steps=[StepResult("login", StepStatus.FAILED, "登录超时")]
+                ))
+            return report
+
+    for i, topic_dir in enumerate(topic_dirs):
+        print(f"\n{'#'*60}")
+        print(f"  Article {i+1}/{len(topic_dirs)}: {topic_dir.name}")
+        print(f"{'#'*60}")
+
+        result = await publish_one(auto, topic_dir, resume_from=resume_from, dry_run=dry_run)
+        report.articles.append(result)
+
+        # 发完一篇后，如果不是最后一篇，新建下一篇需要的编辑器页面
+        # （publish_one 内部会调 new_post）
+
+    # 全部发完，停在草稿列表
+    if not dry_run:
+        await auto.leave_on_draft_list()
+
+    await auto.disconnect()
+    return report
 
 
 def main():
-    parser = argparse.ArgumentParser(description="一键发布到微信公众号")
-    parser.add_argument("--topic-dir", required=True, help="选题目录路径")
+    parser = argparse.ArgumentParser(
+        description="一键发布到微信公众号",
+        epilog=f"可用步骤（--resume-from）: {', '.join(PUBLISH_STEPS)}"
+    )
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--topic-dir", help="选题目录路径（单篇）")
+    group.add_argument("--topic-dirs", nargs="+", help="选题目录路径（多篇）")
     parser.add_argument("--dry-run", action="store_true",
                         help="只走 mdnice 排版，不操作微信编辑器")
+    parser.add_argument("--resume-from", choices=PUBLISH_STEPS, default=None,
+                        help="从指定步骤恢复（跳过之前的步骤）")
     parser.add_argument("--cdp-url", default="http://localhost:9222",
-                        help="Chrome CDP URL (微信编辑器)")
-    parser.add_argument("--port", type=int, default=18443,
-                        help="HTTPS 图片服务器端口")
+                        help="Chrome CDP URL")
     args = parser.parse_args()
 
-    topic_dir = Path(args.topic_dir).resolve()
-    if not topic_dir.exists():
-        topic_dir = PROJECT_ROOT / args.topic_dir
-    if not topic_dir.exists():
-        print(f"ERROR: 目录不存在: {args.topic_dir}", file=sys.stderr)
-        sys.exit(1)
+    # 收集目录
+    if args.topic_dir:
+        raw_dirs = [args.topic_dir]
+    else:
+        raw_dirs = args.topic_dirs
 
-    rc = asyncio.run(publish(
-        topic_dir,
+    topic_dirs = []
+    for d in raw_dirs:
+        td = Path(d).resolve()
+        if not td.exists():
+            td = PROJECT_ROOT / d
+        if not td.exists():
+            print(f"ERROR: 目录不存在: {d}", file=sys.stderr)
+            sys.exit(1)
+        topic_dirs.append(td)
+
+    report = asyncio.run(publish_all(
+        topic_dirs,
         dry_run=args.dry_run,
         cdp_url=args.cdp_url,
-        port=args.port,
+        resume_from=args.resume_from,
     ))
-    sys.exit(rc)
+
+    print(report.summary())
+
+    # exit code: 0 if all success, 1 if any failed
+    sys.exit(0 if all(a.success for a in report.articles) else 1)
 
 
 if __name__ == "__main__":

@@ -4,3 +4,5 @@
 {"timestamp": "2026-02-28T11:00:00", "action": "指出 react.py 直接 fetch 微信文章会被拦截，这个已经说过很多次但没记到 CLAUDE.md", "target": "react.py + MEMORY.md", "trigger": "react.py fetch_wechat_article 用 requests 直连 exporter API 下载，但 exporter 本身需要 auth-key 且微信 URL 直接 fetch 必挂"}
 {"timestamp": "2026-03-01T10:00:00", "action": "视频剪辑：素材有自然顺序不能打乱，商品要网搜确认不能看画面瞎猜", "target": "videocut/edit_unboxing.py 剪辑逻辑", "trigger": "用户指出片段编排打乱了素材原始顺序，且商品识别靠猜不准确"}
 {"timestamp": "2026-03-12T10:00:00", "action": "新认知：GitHub开源项目也是一种内容形态，与公众号文章同构——都是内容创作的载体", "target": "女娲内容循环/子项目方向", "trigger": "从内容创作实践+某篇文章中获得启发：开源项目=内容，值得探索"}
+{"timestamp": "2026-03-14T15:30:00+08:00", "action": "提炼主动注入公理：被动记忆无效，经验必须主动注入（Active Injection Axiom）", "target": "CLAUDE.md 核心工程公理 + .claude/skills/publish-wechat/SKILL.md", "trigger": "Agent 反复调试原创作者字段（memory 明确写不用填），用户多次干预无效，大量人类心智浪费。根因：记忆是被动存储，任务执行时不会主动回忆"}
+{"timestamp": "2026-03-14T08:30:00", "action": "新增第三条工程公理：最少心智投入公理", "target": "CLAUDE.md + docs/zh/nuwa-plan.md", "trigger": "用户发现Agent验证方式是读DOM返回值而非用人类方式验证，导致反复被骗信任崩塌。指出这违反女娲核心原则"}
