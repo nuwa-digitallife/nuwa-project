@@ -1,0 +1,19 @@
+{
+  "topic_dir": "/Users/apple/Desktop/nuwa-project/wechat/公众号选题/2026-03-11|AI就业冲击",
+  "last_step": "verify",
+  "completed_steps": [
+    "upload_images",
+    "mdnice",
+    "paste",
+    "inject_images",
+    "title",
+    "desc",
+    "cover",
+    "original",
+    "reward",
+    "poll",
+    "save",
+    "verify"
+  ],
+  "timestamp": "2026-03-14T16:32:04"
+}
